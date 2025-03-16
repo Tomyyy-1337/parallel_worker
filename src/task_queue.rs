@@ -26,8 +26,7 @@ impl<T> InnerTaskQueue<T> {
     }
 
     fn push(&self, task: T) {
-        let mut tasks = self.tasks.lock().unwrap();
-        tasks.push_back(task);
+        self.tasks.lock().unwrap().push_back(task);
         self.condvar.notify_one();
     }
 
