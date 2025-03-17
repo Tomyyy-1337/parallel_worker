@@ -7,6 +7,7 @@ enum Work<T> {
     Terminate,
 }
 
+/// A worker that processes tasks in parallel using multiple worker threads.
 pub struct Worker<T, R>
 where
     T: Send + 'static,
@@ -45,7 +46,7 @@ where
             worker_state,
         }
     }
-    
+
     /// Clear the task queue and cancel all tasks as soon as possible.
     pub fn clear_queue(&mut self) {
         self.task_queue.clear_queue();

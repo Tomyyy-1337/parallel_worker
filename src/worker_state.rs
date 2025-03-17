@@ -1,9 +1,10 @@
 use std::sync::{Arc, Mutex};
 
 /// Check if the task has been canceled and return None if it has.
+/// Can be used inside the worker function to check if the task has been canceled.
 /// 
 /// ## Shorthand for:
-/// ```rust
+/// ```rust.ignore
 /// if state.is_cancelled() {
 ///    return None;
 /// }
