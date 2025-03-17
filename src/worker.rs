@@ -45,7 +45,7 @@ where
             worker_state,
         }
     }
-
+    
     /// Clear the task queue and cancel all tasks as soon as possible.
     pub fn clear_queue(&mut self) {
         self.task_queue.clear_queue();

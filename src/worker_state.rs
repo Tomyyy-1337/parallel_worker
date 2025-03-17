@@ -1,5 +1,13 @@
 use std::sync::{Arc, Mutex};
 
+/// Check if the task has been canceled and return None if it has.
+/// 
+/// ## Shorthand for:
+/// ```rust
+/// if state.is_cancelled() {
+///    return None;
+/// }
+/// ```
 #[macro_export]
 macro_rules! check_if_cancelled {
     ($state:expr) => {
@@ -15,6 +23,9 @@ enum WorkerState {
     Waiting,
 }
 
+/// State of the worker. Used to check if the task has been canceled.
+/// Check if the task has been canceled using the `is_cancelled` method.
+/// Or use the `check_if_cancelled!` macro to check and return None from the worker function.
 pub struct State {
     state: Arc<Mutex<WorkerState>>,
 }
@@ -43,7 +54,8 @@ impl State {
     }
 
     /// Returns true if the task has been canceled. The result
-    /// of the worker will be ignored.
+    /// of the worker will be ignored. Use this to check if the
+    /// task should be canceled for long running tasks.
     pub fn is_cancelled(&self) -> bool {
         match *self.state.lock().unwrap() {
             WorkerState::Canceled => true,
