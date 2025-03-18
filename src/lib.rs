@@ -13,12 +13,12 @@
 //!     worker.add_task(1);
 //!     worker.add_task(2);
 //!
-//!     let first_result = worker.wait_for_result();
+//!     let first_result = worker.get_blocking();
 //!     assert_eq!(first_result, Some(42));
 //!     
 //!     worker.add_tasks(3..10);
 //!
-//!     let results = worker.wait_for_all_results();
+//!     let results = worker.get_vec_blocking();
 //!     assert!(results.len() == 8);
 //! }
 //!
@@ -38,7 +38,7 @@
 //!
 //!     worker.clear_queue();
 //!
-//!     assert_eq!(worker.wait_for_all_results(), vec![]);
+//!     assert_eq!(worker.get_vec_blocking(), vec![]);
 //! }
 //!
 //! fn worker_function(task: u64, state: &State) -> Option<u64> {

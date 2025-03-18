@@ -9,7 +9,7 @@ fn main() {
     worker.add_task(2);
     worker.add_task(3);
 
-    let results = worker.wait_for_all_results();
+    let results = worker.get_vec_blocking();
     println!("Results: {:?}", results);
 }
 

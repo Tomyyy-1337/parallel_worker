@@ -87,23 +87,9 @@ where
         self.num_pending_tasks += num;
     }
 
-    /// BLock until a result is available and return it.
-    fn wait_on_channel(&mut self) -> Option<R> {
-        match self.result_receiver.recv() {
-            Ok(result) => {
-                self.num_pending_tasks -= 1;
-                match result {
-                    Some(result) => Some(result),
-                    None => None,
-                }
-            }
-            Err(_) => None,
-        }
-    }
-
     /// Return the next result. If no result is available, return None.
     /// This function will not block.
-    pub fn get_if_ready(&mut self) -> Option<R> {
+    pub fn get(&mut self) -> Option<R> {
         loop {
             match self.result_receiver.try_recv() {
                 Ok(result) => {
@@ -120,7 +106,7 @@ where
 
     /// Return the next result. If no result is available block until a result is available.
     /// If no tasks are pending, return None.
-    pub fn wait_for_result(&mut self) -> Option<R> {
+    pub fn get_blocking(&mut self) -> Option<R> {
         while self.num_pending_tasks > 0 {
             if let Some(result) = self.wait_on_channel() {
                 return Some(result);
@@ -129,62 +115,52 @@ where
         None
     }
 
-    /// Block until all tasks have been processed and return all results in a vector.
-    pub fn wait_for_all_results(&mut self) -> Vec<R> {
-        let mut results = Vec::with_capacity(self.num_pending_tasks);
-        while self.num_pending_tasks > 0 {
-            match self.wait_on_channel() {
-                Some(result) => results.push(result),
-                None => (),
-            }
+    /// Return an iterator over all available results.
+    /// This function will not block.
+    pub fn get_iter(&mut self) -> impl Iterator<Item = R> {
+        (0..).map(|_| self.get())
+            .take_while(Option::is_some)
+            .flatten()
+    }
 
-        }
-        results
+    /// Returns an iterator over all results.
+    /// This function will block until all tasks have been processed.
+    pub fn get_iter_blocking(&mut self) -> impl Iterator<Item = R> {
+        (0..self.num_pending_tasks).map(|_| self.wait_on_channel())
+            .flatten()
     }
 
     /// Receive all available results and return them in a vector.
     /// This function will not block.
-    pub fn receive_all_results(&mut self) -> Vec<R> {
-        let mut results = Vec::new();
-        loop {
-            match self.wait_for_result() {
-                Some(result) => results.push(result),
-                None => break,
-            }
-        }
-        results
+    pub fn get_vec(&mut self) -> Vec<R> {
+        self.get_iter().collect()
     }
 
-    /// Write all results into the buffer and return the number of results written.
-    /// If the buffer is too small to hold all results, the remaining results will be left in the queue.
-    /// This function will block until no tasks are pending or the buffer is full.
-    pub fn receive_results_in_buffer_blocking(&mut self, buffer: &mut [R]) -> usize {
-        let mut indx = 0;
-        while indx < buffer.len() && self.num_pending_tasks > 0 {
-            match self.wait_for_result() {
-                Some(result) => {
-                    buffer[indx] = result;
-                    indx += 1;
-                }
-                None => (),
-            }
-        }
-        indx
+    /// Block until all tasks have been processed and return all results in a vector.
+    pub fn get_vec_blocking(&mut self) -> Vec<R> {
+        self.get_iter_blocking().collect()
     }
 
     /// Write available results into the buffer and return the number of results written.
     /// If the buffer is too small to hold all available results, the remaining results will be left in the queue.
     /// This function will not block. 
-    pub fn receive_results_in_buffer(&mut self, buffer: &mut [R]) -> usize {
+    pub fn get_buffered(&mut self, buffer: &mut [R]) -> usize {
         let mut indx = 0;
-        while indx < buffer.len() && self.num_pending_tasks > 0 {
-            match self.wait_for_result() {
-                Some(result) => {
-                    buffer[indx] = result;
-                    indx += 1;
-                }
-                None => break,
-            }
+        for result in self.get_iter().take(buffer.len()) {
+            buffer[indx] = result;
+            indx += 1;
+        }
+        indx
+    }
+
+    /// Write all results into the buffer and return the number of results written.
+    /// If the buffer is too small to hold all results, the remaining results will be left in the queue.
+    /// This function will block until no tasks are pending or the buffer is full.
+    pub fn get_buffered_blocking(&mut self, buffer: &mut [R]) -> usize {
+        let mut indx = 0;
+        for result in self.get_iter_blocking().take(buffer.len()) {
+            buffer[indx] = result;
+            indx += 1;
         }
         indx
     }
@@ -201,6 +177,20 @@ where
         self.num_pending_tasks
     }
 
+    /// BLock until a result is available and return it.
+    fn wait_on_channel(&mut self) -> Option<R> {
+        match self.result_receiver.recv() {
+            Ok(result) => {
+                self.num_pending_tasks -= 1;
+                match result {
+                    Some(result) => Some(result),
+                    None => None,
+                }
+            }
+            Err(_) => None,
+        }
+    }
+
     fn spawn_worker_thread(
         worker_function: fn(T, &State) -> Option<R>,
         result_sender: Sender<Option<R>>,
@@ -209,17 +199,11 @@ where
     ) -> std::thread::JoinHandle<()> {
         std::thread::spawn(move || {
             loop {
-                state.set_waiting();
                 let task = task_queue.wait_for_task();
-                if !state.set_running() {
-                    if let Err(_) = result_sender.send(None) {
-                        break;
-                    }
-                }
+                state.set_running();
                 match task {
                     Work::Terminate => break,
                     Work::Task(task) => {
-                        state.set_running();
                         let result = worker_function(task, &state);
                         let send_value = if state.is_cancelled() { None } else { result };
                             

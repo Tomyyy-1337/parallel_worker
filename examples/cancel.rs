@@ -14,7 +14,7 @@ fn main() {
     worker.add_task(());
     worker.clear_queue();
 
-    worker.wait_for_all_results();
+    worker.get_vec_blocking();
 }
 
 fn worker_function(_task: (), state: &State) -> Option<()> {
