@@ -68,7 +68,7 @@ where
     }
 
     /// Clear the task queue and cancel all tasks as soon as possible.
-    pub fn clear_queue(&mut self) {
+    pub fn cancel_tasks(&mut self) {
         self.num_pending_tasks -= self.task_queue.clear_queue();
         for state in &self.worker_state {
             state.cancel();
@@ -209,7 +209,7 @@ where
 {
     /// Drop the worker and terminate all worker threads.
     fn drop(&mut self) {
-        self.clear_queue();
+        self.cancel_tasks();
 
         let messages = (0..self.num_worker_threads).map(|_| Work::Terminate);
 

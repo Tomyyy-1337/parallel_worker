@@ -36,7 +36,7 @@
 //!
 //!     worker.add_task(1);
 //!
-//!     worker.clear_queue();
+//!     worker.cancel_tasks();
 //!
 //!     assert_eq!(worker.get_vec_blocking(), vec![]);
 //! }

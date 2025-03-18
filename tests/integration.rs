@@ -214,7 +214,7 @@ fn test_cancel() {
     worker.add_task(30);
 
     assert_eq!(worker.get(), None);
-    worker.clear_queue();
+    worker.cancel_tasks();
     assert_eq!(worker.get(), None);
 
     assert_eq!(worker.get_vec_blocking(), vec![]);
@@ -264,7 +264,7 @@ fn test_cancel_high_load() {
         worker.add_task(20);
         worker.add_task(20);
 
-        worker.clear_queue();
+        worker.cancel_tasks();
 
         assert!(worker.get_iter_blocking().next().is_none());
 

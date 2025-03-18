@@ -9,10 +9,10 @@ fn main() {
     worker.add_task(());
     worker.add_task(());
     worker.add_task(());
-    worker.clear_queue();
+    worker.cancel_tasks();
 
     worker.add_task(());
-    worker.clear_queue();
+    worker.cancel_tasks();
 
     worker.get_vec_blocking();
 }
