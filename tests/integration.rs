@@ -245,3 +245,31 @@ fn test_long_running_worker() {
 
     assert_eq!(results.len(), 200);
 }
+
+#[test]
+fn test_cancel_high_load() {
+    use std::{thread::sleep, time::Duration};
+    use parallel_worker::State;
+
+    use crate::Worker;
+
+    let mut worker = Worker::new(|n: u64, _s: &State| {
+        sleep(Duration::from_millis(n));
+        Some(n)
+    });
+
+    for _ in 0..100 {
+        worker.add_task(20);
+        worker.add_task(20);
+        worker.add_task(20);
+        worker.add_task(20);
+
+        worker.clear_queue();
+
+        assert!(worker.get_iter_blocking().next().is_none());
+
+        worker.add_task(0);
+
+        assert_eq!(worker.get_blocking(), Some(0));    
+    }
+}

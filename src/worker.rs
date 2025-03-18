@@ -1,6 +1,5 @@
 use std::{
-    sync::mpsc::{Receiver, Sender},
-    thread::available_parallelism,
+    sync::mpsc::{Receiver, Sender}, thread::available_parallelism
 };
 
 use crate::{State, task_queue::TaskQueue};
@@ -122,19 +121,13 @@ where
     /// Return an iterator over all available results.
     /// This function will not block.
     pub fn get_iter(&mut self) -> impl Iterator<Item = R> {
-        (0..)
-            .map(|_| self.get())
-            .take_while(Option::is_some)
-            .flatten()
+        std::iter::from_fn(|| self.get())
     }
 
     /// Returns an iterator over all results.
     /// This function will block until all tasks have been processed.
     pub fn get_iter_blocking(&mut self) -> impl Iterator<Item = R> {
-        (0..)
-            .map(|_| self.get_blocking())
-            .take_while(Option::is_some)
-            .flatten()
+        std::iter::from_fn(|| self.get_blocking())
     }
 
     /// Receive all available results and return them in a vector.
