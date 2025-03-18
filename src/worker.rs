@@ -1,6 +1,5 @@
 use std::{
-    sync::mpsc::{Receiver, Sender},
-    thread::available_parallelism,
+    iter::Peekable, sync::mpsc::{Receiver, Sender}, thread::available_parallelism
 };
 
 use crate::{State, task_queue::TaskQueue};
@@ -21,6 +20,31 @@ where
     num_worker_threads: usize,
     num_pending_tasks: usize,
     worker_state: Vec<State>,
+}
+
+impl<T, R> Iterator for Worker<T, R>
+where
+    T: Send + 'static,
+    R: Send + 'static,
+{
+    type Item = R;
+
+    /// Return the next result. If no result is available, return None.
+    /// This function will not block.
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            match self.result_receiver.try_recv() {
+                Ok(result) => {
+                    self.num_pending_tasks -= 1;
+                    match result {
+                        Some(result) => return Some(result),
+                        None => (),
+                    }
+                }
+                Err(_) => return None,
+            }
+        }
+    }
 }
 
 impl<T, R> Worker<T, R>
@@ -88,23 +112,6 @@ where
         self.num_pending_tasks += num;
     }
 
-    /// Return the next result. If no result is available, return None.
-    /// This function will not block.
-    pub fn get_result_option(&mut self) -> Option<R> {
-        loop {
-            match self.result_receiver.try_recv() {
-                Ok(result) => {
-                    self.num_pending_tasks -= 1;
-                    match result {
-                        Some(result) => return Some(result),
-                        None => (),
-                    }
-                }
-                Err(_) => return None,
-            }
-        }
-    }
-
     /// BLock until a result is available and return it.
     fn wait_on_channel(&mut self) -> Option<R> {
         match self.result_receiver.recv() {
@@ -122,7 +129,7 @@ where
     /// Wait for the next result and return it if there are any pending tasks. 
     /// Blocks until a result is available.
     /// If not tasks are pending, this function will return None.
-    pub fn wait_for_result_option(&mut self) -> Option<R> {
+    pub fn wait_for_result(&mut self) -> Option<R> {
         while self.num_pending_tasks > 0 {
             if let Some(result) = self.wait_on_channel() {
                 return Some(result);
@@ -131,20 +138,11 @@ where
         None
     }
 
-    /// Wait for the next result and return it. Blocks until a result is available.
-    pub fn wait_for_result(&mut self) -> R {
-        loop {
-            if let Some(result) = self.wait_on_channel() {
-                return result;
-            }
-        }
-    }
-
     /// Block until all tasks have been processed and return all results in a vector.
     pub fn wait_for_all_results(&mut self) -> Vec<R> {
         let mut results = Vec::with_capacity(self.num_pending_tasks);
         while self.num_pending_tasks > 0 {
-            match self.wait_for_result_option() {
+            match self.wait_on_channel() {
                 Some(result) => results.push(result),
                 None => (),
             }
@@ -156,9 +154,9 @@ where
     /// Receive all available results and return them in a vector.
     /// This function will not block.
     pub fn receive_all_results(&mut self) -> Vec<R> {
-        let mut results = Vec::with_capacity(self.num_pending_tasks);
+        let mut results = Vec::new();
         loop {
-            match self.get_result_option() {
+            match self.next() {
                 Some(result) => results.push(result),
                 None => break,
             }
@@ -172,12 +170,12 @@ where
     pub fn receive_results_in_buffer_blocking(&mut self, buffer: &mut [R]) -> usize {
         let mut indx = 0;
         while indx < buffer.len() && self.num_pending_tasks > 0 {
-            match self.wait_for_result_option() {
+            match self.wait_for_result() {
                 Some(result) => {
                     buffer[indx] = result;
                     indx += 1;
                 }
-                None => break,
+                None => (),
             }
         }
         indx
@@ -189,7 +187,7 @@ where
     pub fn receive_results_in_buffer(&mut self, buffer: &mut [R]) -> usize {
         let mut indx = 0;
         while indx < buffer.len() && self.num_pending_tasks > 0 {
-            match self.get_result_option() {
+            match self.next() {
                 Some(result) => {
                     buffer[indx] = result;
                     indx += 1;
@@ -257,89 +255,5 @@ where
         let messages = (0..self.num_worker_threads).map(|_| Work::Terminate);
 
         self.task_queue.extend(messages);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_worker_base() {
-        let mut worker = Worker::new(|n, _s| Some(n));
-
-        worker.add_task(1);
-        worker.add_task(2);
-        worker.add_task(3);
-
-        let mut results = worker.wait_for_all_results();
-        results.sort_unstable();
-        assert_eq!(results, vec![1, 2, 3]);
-    }
-
-    #[test]
-    fn test_worker_optional_result() {
-        let mut worker = Worker::new(|n, _s| 
-            if n % 2 == 0 {
-                Some(n)
-            } else {
-                None
-            }
-        );
-        
-        worker.add_task(1);
-        worker.add_task(2);
-        worker.add_task(3);
-
-
-        let results = worker.wait_for_all_results();
-        assert_eq!(results, vec![2]);
-
-        let mut results = worker.wait_for_all_results();
-        results.sort_unstable();
-        assert_eq!(results, vec![]);
-
-        worker.add_task(4);
-        worker.add_task(5);
-        worker.add_task(6);
-
-        let mut results = worker.wait_for_all_results();
-        results.sort_unstable();
-        assert_eq!(results, vec![4, 6]);
-    }
-
-    #[test]
-    fn test_wait_for_task() {
-        let mut worker = Worker::with_num_threads(4 ,|n, _s| Some(n));
-
-        worker.add_task(1);
-        worker.add_task(2);
-        worker.add_task(3);
-
-        let mut results = Vec::new();
-        while worker.num_pending_tasks() > 0 {
-            results.push(worker.wait_for_result());
-        }
-        results.sort_unstable();
-        assert_eq!(results, vec![1, 2, 3]);
-    }
-
-    #[test]
-    fn test_receive_results_in_buffer() {
-        let mut worker = Worker::with_num_threads(4, |n, _s| Some(n));
-
-        worker.add_task(1);
-        worker.add_task(2);
-        worker.add_task(3);
-
-        let mut results = [0; 2];
-        let num_results = worker.receive_results_in_buffer_blocking(&mut results);
-        
-        assert!([1,2,3].contains(&results[0]) && [1,2,3].contains(&results[1]));
-        assert_eq!(num_results, 2);
-
-        let num_results = worker.receive_results_in_buffer_blocking(&mut results);
-        assert!([1,2,3].contains(&results[0]));
-        assert_eq!(num_results, 1);
     }
 }

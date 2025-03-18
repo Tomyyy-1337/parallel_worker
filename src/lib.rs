@@ -14,7 +14,7 @@
 //!     worker.add_task(2);
 //!
 //!     let first_result = worker.wait_for_result();
-//!     assert_eq!(first_result, 42);
+//!     assert_eq!(first_result, Some(42));
 //!     
 //!     worker.add_tasks(3..10);
 //!
