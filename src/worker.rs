@@ -105,7 +105,7 @@ where
         }
     }
 
-    pub fn wait_for_result_option_unchecked(&mut self) -> Option<R> {
+    fn wait_on_channel(&mut self) -> Option<R> {
         match self.result_receiver.recv() {
             Ok(result) => {
                 self.num_pending_tasks -= 1;
@@ -123,7 +123,7 @@ where
     /// If not tasks are pending, this function will return None.
     pub fn wait_for_result_option(&mut self) -> Option<R> {
         while self.num_pending_tasks > 0 {
-            if let Some(result) = self.wait_for_result_option_unchecked() {
+            if let Some(result) = self.wait_on_channel() {
                 return Some(result);
             }
         }
@@ -133,7 +133,7 @@ where
     /// Wait for the next result and return it. Blocks until a result is available.
     pub fn wait_for_result(&mut self) -> R {
         loop {
-            if let Some(result) = self.wait_for_result_option_unchecked() {
+            if let Some(result) = self.wait_on_channel() {
                 return result;
             }
         }
