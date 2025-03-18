@@ -10,7 +10,8 @@ fn test_worker_base() {
     worker.add_task(2);
     worker.add_task(3);
 
-    let mut results = worker.wait_for_all_results();
+
+    let mut results = worker.collect::<Vec<_>>();
     results.sort_unstable();
     assert_eq!(results, vec![1, 2, 3]);
 }

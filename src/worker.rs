@@ -1,5 +1,5 @@
 use std::{
-    iter::Peekable, sync::mpsc::{Receiver, Sender}, thread::available_parallelism
+    sync::mpsc::{Receiver, Sender}, thread::available_parallelism
 };
 
 use crate::{State, task_queue::TaskQueue};
@@ -29,21 +29,10 @@ where
 {
     type Item = R;
 
-    /// Return the next result. If no result is available, return None.
-    /// This function will not block.
+    /// Return the next result. If no result is available wait until a result is available.
+    /// If no tasks are pending, return None.
     fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            match self.result_receiver.try_recv() {
-                Ok(result) => {
-                    self.num_pending_tasks -= 1;
-                    match result {
-                        Some(result) => return Some(result),
-                        None => (),
-                    }
-                }
-                Err(_) => return None,
-            }
-        }
+        self.wait_for_result()
     }
 }
 
@@ -126,9 +115,25 @@ where
         }
     }
 
-    /// Wait for the next result and return it if there are any pending tasks. 
-    /// Blocks until a result is available.
-    /// If not tasks are pending, this function will return None.
+    /// Return the next result. If no result is available, return None.
+    /// This function will not block.
+    pub fn get_if_ready(&mut self) -> Option<R> {
+        loop {
+            match self.result_receiver.try_recv() {
+                Ok(result) => {
+                    self.num_pending_tasks -= 1;
+                    match result {
+                        Some(result) => return Some(result),
+                        None => (),
+                    }
+                }
+                Err(_) => return None,
+            }
+        }
+    }
+
+    /// Return the next result. If no result is available block until a result is available.
+    /// If no tasks are pending, return None.
     pub fn wait_for_result(&mut self) -> Option<R> {
         while self.num_pending_tasks > 0 {
             if let Some(result) = self.wait_on_channel() {
