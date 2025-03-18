@@ -1,5 +1,6 @@
 use std::{
-    sync::mpsc::{Receiver, Sender}, thread::available_parallelism
+    sync::mpsc::{Receiver, Sender},
+    thread::available_parallelism,
 };
 
 use crate::{State, task_queue::TaskQueue};
@@ -121,7 +122,8 @@ where
     /// Return an iterator over all available results.
     /// This function will not block.
     pub fn get_iter(&mut self) -> impl Iterator<Item = R> {
-        (0..).map(|_| self.get())
+        (0..)
+            .map(|_| self.get())
             .take_while(Option::is_some)
             .flatten()
     }
@@ -148,7 +150,7 @@ where
 
     /// Write available results into the buffer and return the number of results written.
     /// If the buffer is too small to hold all available results, the remaining results will be left in the queue.
-    /// This function will not block. 
+    /// This function will not block.
     pub fn get_buffered(&mut self, buffer: &mut [R]) -> usize {
         let mut indx = 0;
         for result in self.get_iter().take(buffer.len()) {
@@ -190,18 +192,18 @@ where
     ) -> std::thread::JoinHandle<()> {
         std::thread::spawn(move || {
             loop {
-                let task = task_queue.wait_for_task();
-                state.set_running();
+                let task = task_queue.wait_for_task_and_then(
+                    || state.set_running(),
+                );
                 match task {
                     Work::Terminate => break,
                     Work::Task(task) => {
                         let result = worker_function(task, &state);
                         let result = if state.is_cancelled() { None } else { result };
-                            
+
                         if let Err(_) = result_sender.send(result) {
                             break;
                         }
-                        
                     }
                 }
             }

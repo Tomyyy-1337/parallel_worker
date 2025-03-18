@@ -1,6 +1,6 @@
 use std::thread::sleep;
 
-use parallel_worker::{check_if_cancelled, Worker};
+use parallel_worker::{Worker, check_if_cancelled};
 
 #[test]
 fn test_worker_base() {
@@ -83,21 +83,13 @@ fn test_wait_for_result() {
     assert_eq!(results, vec![Some(4), Some(5)]);
 }
 
-
 #[test]
 fn test_wait_for_all_results() {
-    let mut worker = Worker::new(|n, _s| 
-        if n % 2 == 0 {
-            Some(n)
-        } else {
-            None
-        }
-    );
-    
+    let mut worker = Worker::new(|n, _s| if n % 2 == 0 { Some(n) } else { None });
+
     worker.add_task(1);
     worker.add_task(2);
     worker.add_task(3);
-
 
     let results = worker.get_vec_blocking();
     assert_eq!(results, vec![2]);
@@ -114,7 +106,6 @@ fn test_wait_for_all_results() {
     results.sort_unstable();
     assert_eq!(results, vec![4, 6]);
 }
-
 
 #[test]
 fn test_receive_results_in_buffer_blocking() {
@@ -146,24 +137,18 @@ fn test_receive_results_in_buffer() {
 
     let mut results = [0; 2];
     let num_results = worker.get_buffered_blocking(&mut results);
-    
-    assert!([1,2,3].contains(&results[0]) && [1,2,3].contains(&results[1]));
+
+    assert!([1, 2, 3].contains(&results[0]) && [1, 2, 3].contains(&results[1]));
     assert_eq!(num_results, 2);
 
     let num_results = worker.get_buffered_blocking(&mut results);
-    assert!([1,2,3].contains(&results[0]));
+    assert!([1, 2, 3].contains(&results[0]));
     assert_eq!(num_results, 1);
 }
 
 #[test]
 fn test_optional_return() {
-    let mut worker = Worker::new(|n, _s| 
-        if n % 2 == 0 {
-            Some(n)
-        } else {
-            None
-        }
-    );
+    let mut worker = Worker::new(|n, _s| if n % 2 == 0 { Some(n) } else { None });
 
     worker.add_task(1);
     worker.add_task(2);
@@ -227,7 +212,7 @@ fn test_cancel() {
     worker.add_task(10);
     worker.add_task(20);
     worker.add_task(30);
-    
+
     assert_eq!(worker.get(), None);
     worker.clear_queue();
     assert_eq!(worker.get(), None);
@@ -255,7 +240,7 @@ fn test_long_running_worker() {
             results.push(result);
         }
     }
-    
+
     results.extend(worker.get_iter_blocking());
 
     assert_eq!(results.len(), 200);

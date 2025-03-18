@@ -45,11 +45,17 @@ impl<T> InnerTaskQueue<T> {
         num_new
     }
 
-    fn wait_for_task(&self) -> T {
+    fn wait_for_task_and_then(
+        &self,
+        f: impl Fn(),
+    ) -> T {
         let mut tasks = self.tasks.lock().unwrap();
         loop {
             match tasks.pop_front() {
-                Some(task) => return task,
+                Some(task) => {
+                    f();
+                    return task
+                },
                 None => tasks = self.condvar.wait(tasks).unwrap(),
             }
         }
@@ -83,8 +89,11 @@ impl<T> TaskQueue<T> {
         self.inner.extend(new_tasks)
     }
 
-    pub fn wait_for_task(&self) -> T {
-        self.inner.wait_for_task()
+    pub fn wait_for_task_and_then(
+        &self,
+        f: impl Fn(),
+    ) -> T {
+        self.inner.wait_for_task_and_then(f)
     }
 }
 
@@ -110,14 +119,14 @@ mod tests {
         assert_eq!(task_queue.len(), 1);
         task_queue.push(2);
         assert_eq!(task_queue.len(), 2);
-        assert_eq!(task_queue.wait_for_task(), 1);
+        assert_eq!(task_queue.wait_for_task_and_then(|| ()), 1);
         assert_eq!(task_queue.len(), 1);
-        assert_eq!(task_queue.wait_for_task(), 2);
+        assert_eq!(task_queue.wait_for_task_and_then(|| ()), 2);
         assert_eq!(task_queue.len(), 0);
 
         let task_queue_clone = task_queue.clone();
         let t = std::thread::spawn(move || {
-            task_queue_clone.wait_for_task();
+            task_queue_clone.wait_for_task_and_then(|| ())
         });
 
         sleep(Duration::from_millis(500));
@@ -130,7 +139,7 @@ mod tests {
             .map(|_| {
                 let task_queue_clone = task_queue.clone();
                 std::thread::spawn(move || {
-                    task_queue_clone.wait_for_task();
+                    task_queue_clone.wait_for_task_and_then(|| ());
                 })
             })
             .collect::<Vec<_>>();

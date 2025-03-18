@@ -1,8 +1,8 @@
-use std::sync::{atomic::AtomicBool, Arc, Mutex};
+use std::sync::{Arc, atomic::AtomicBool};
 
 /// Check if the task has been canceled and return None if it has.
 /// Can be used inside the worker function to check if the task has been canceled.
-/// 
+///
 /// ## Example usage:
 /// ```rust ignore
 /// fn worker_function(task: T, state: &State) -> Option<R> {
@@ -12,7 +12,7 @@ use std::sync::{atomic::AtomicBool, Arc, Mutex};
 ///     }
 ///     Some(result)
 /// }
-/// ``` 
+/// ```
 ///
 /// ## Shorthand for:
 /// ```rust ignore
@@ -44,11 +44,13 @@ impl State {
     }
 
     pub(crate) fn set_running(&self) {
-        self.is_canceled.store(false, std::sync::atomic::Ordering::Relaxed);
+        self.is_canceled
+            .store(false, std::sync::atomic::Ordering::Relaxed);
     }
 
     pub(crate) fn cancel(&self) {
-        self.is_canceled.store(true, std::sync::atomic::Ordering::Relaxed);
+        self.is_canceled
+            .store(true, std::sync::atomic::Ordering::Relaxed);
     }
 
     /// Returns true if the task has been canceled. The result
@@ -67,25 +69,28 @@ impl Clone for State {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-//     #[test]
-//     fn test_state() {
-//         let state = State::new(); 
-//         assert!(!state.is_cancelled());
+    #[test]
+    fn test_state() {
+        let state = State::new();
+        assert!(!state.is_cancelled());
 
-//         state.set_running(); 
-//         assert!(!state.is_cancelled());
+        state.set_running();
+        assert!(!state.is_cancelled());
 
-//         state.cancel();
-//         assert!(state.is_cancelled());
+        state.cancel();
+        assert!(state.is_cancelled());
 
-//         state.set_waiting();
-//         assert!(!state.is_cancelled());
+        state.cancel();
+        assert!(state.is_cancelled());
 
-//         state.cancel();
-//         assert!(!state.is_cancelled());
-//     }
-// }
+        state.set_running();
+        assert!(!state.is_cancelled());
+
+        state.set_running();
+        assert!(!state.is_cancelled());
+    }
+}
