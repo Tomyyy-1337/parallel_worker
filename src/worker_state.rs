@@ -53,8 +53,15 @@ impl State {
         *self.state.lock().unwrap() = WorkerState::Waiting;
     }
 
-    pub(crate) fn set_running(&self) {
-        *self.state.lock().unwrap() = WorkerState::Running;
+    pub(crate) fn set_running(&self) -> bool {
+        let mut state = self.state.lock().unwrap();
+        match *state {
+            WorkerState::Waiting => {
+                *state = WorkerState::Running;
+                true
+            }
+            _ => false,
+        }
     }
 
     pub(crate) fn cancel(&self) {
@@ -81,5 +88,28 @@ impl Clone for State {
         State {
             state: self.state.clone(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_state() {
+        let state = State::new(); 
+        assert!(!state.is_cancelled());
+
+        state.set_running(); 
+        assert!(!state.is_cancelled());
+
+        state.cancel();
+        assert!(state.is_cancelled());
+
+        state.set_waiting();
+        assert!(!state.is_cancelled());
+
+        state.cancel();
+        assert!(!state.is_cancelled());
     }
 }
