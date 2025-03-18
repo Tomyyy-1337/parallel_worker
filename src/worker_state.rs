@@ -1,4 +1,4 @@
-use std::sync::{Arc, atomic::AtomicBool};
+use std::sync::{atomic::{AtomicBool, Ordering}, Arc};
 
 /// Check if the task has been canceled and return None if it has.
 /// Can be used inside the worker function to check if the task has been canceled.
@@ -45,19 +45,19 @@ impl State {
 
     pub(crate) fn set_running(&self) {
         self.is_canceled
-            .store(false, std::sync::atomic::Ordering::Relaxed);
+            .store(false, Ordering::Relaxed);
     }
 
     pub(crate) fn cancel(&self) {
         self.is_canceled
-            .store(true, std::sync::atomic::Ordering::Relaxed);
+            .store(true, Ordering::Relaxed);
     }
 
     /// Returns true if the task has been canceled. The result
     /// of the worker will be ignored. Use this to check if the
     /// task should be canceled for long running tasks.
     pub fn is_cancelled(&self) -> bool {
-        self.is_canceled.load(std::sync::atomic::Ordering::Relaxed)
+        self.is_canceled.load(Ordering::Relaxed)
     }
 }
 
