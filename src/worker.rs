@@ -22,20 +22,6 @@ where
     worker_state: Vec<State>,
 }
 
-impl<T, R> Iterator for Worker<T, R>
-where
-    T: Send + 'static,
-    R: Send + 'static,
-{
-    type Item = R;
-
-    /// Return the next result. If no result is available wait until a result is available.
-    /// If no tasks are pending, return None.
-    fn next(&mut self) -> Option<Self::Item> {
-        self.wait_for_result()
-    }
-}
-
 impl<T, R> Worker<T, R>
 where
     T: Send + 'static,
@@ -161,7 +147,7 @@ where
     pub fn receive_all_results(&mut self) -> Vec<R> {
         let mut results = Vec::new();
         loop {
-            match self.next() {
+            match self.wait_for_result() {
                 Some(result) => results.push(result),
                 None => break,
             }
@@ -192,7 +178,7 @@ where
     pub fn receive_results_in_buffer(&mut self, buffer: &mut [R]) -> usize {
         let mut indx = 0;
         while indx < buffer.len() && self.num_pending_tasks > 0 {
-            match self.next() {
+            match self.wait_for_result() {
                 Some(result) => {
                     buffer[indx] = result;
                     indx += 1;

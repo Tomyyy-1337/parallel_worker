@@ -10,8 +10,7 @@ fn test_worker_base() {
     worker.add_task(2);
     worker.add_task(3);
 
-
-    let mut results = worker.collect::<Vec<_>>();
+    let mut results = worker.wait_for_all_results();
     results.sort_unstable();
     assert_eq!(results, vec![1, 2, 3]);
 }
@@ -26,7 +25,7 @@ fn test_iter() {
 
     let mut results = Vec::new();
     while results.len() < 3 {
-        match worker.next() {
+        match worker.wait_for_result() {
             Some(result) => results.push(result),
             None => sleep(std::time::Duration::from_millis(10)),
         }
