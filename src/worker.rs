@@ -105,6 +105,7 @@ where
         }
     }
 
+    /// BLock until a result is available and return it.
     fn wait_on_channel(&mut self) -> Option<R> {
         match self.result_receiver.recv() {
             Ok(result) => {
@@ -193,7 +194,7 @@ where
                     buffer[indx] = result;
                     indx += 1;
                 }
-                None => (),
+                None => break,
             }
         }
         indx
