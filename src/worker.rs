@@ -192,9 +192,7 @@ where
     ) -> std::thread::JoinHandle<()> {
         std::thread::spawn(move || {
             loop {
-                let task = task_queue.wait_for_task_and_then(
-                    || state.set_running(),
-                );
+                let task = task_queue.wait_for_task_and_then(|| state.set_running());
                 match task {
                     Work::Terminate => break,
                     Work::Task(task) => {
