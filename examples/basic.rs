@@ -1,12 +1,9 @@
 use std::{thread::sleep, time::Duration};
 
-use parallel_worker::{check_if_cancelled, State, Worker};
+use parallel_worker::{State, Worker, check_if_cancelled};
 
 fn main() {
-    let mut worker = Worker::new(
-        4,
-        worker_function,
-    );
+    let mut worker = Worker::new(worker_function);
 
     worker.add_task(1);
     worker.add_task(2);
@@ -18,9 +15,9 @@ fn main() {
 
 fn worker_function(task: u64, state: &State) -> Option<u64> {
     check_if_cancelled!(state);
-    
+
     sleep(Duration::from_secs(task));
-    
+
     check_if_cancelled!(state);
 
     println!("Task completed after {} seconds", task);

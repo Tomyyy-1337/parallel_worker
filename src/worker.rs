@@ -1,6 +1,9 @@
-use std::sync::mpsc::{Receiver, Sender};
+use std::{
+    sync::mpsc::{Receiver, Sender},
+    thread::available_parallelism,
+};
 
-use crate::{task_queue::TaskQueue, State};
+use crate::{State, task_queue::TaskQueue};
 
 enum Work<T> {
     Task(T),
@@ -27,15 +30,23 @@ where
 {
     /// Create a new worker with a given number of worker threads and a worker function.
     /// Spawns worker threads that will process tasks from the queue using the worker function.
-    pub fn new(num_worker_threads: usize, worker_function: fn(T, &State) -> Option<R>) -> Worker<T, R> {
+    pub fn with_num_threads(
+        num_worker_threads: usize,
+        worker_function: fn(T, &State) -> Option<R>,
+    ) -> Worker<T, R> {
         let (result_sender, result_receiver) = std::sync::mpsc::channel();
         let task_queue = TaskQueue::new();
-        
+
         let mut worker_state = Vec::new();
         for _ in 0..num_worker_threads.max(1) {
             let state = State::new();
             worker_state.push(state.clone());
-            Self::spawn_worker_thread(worker_function, result_sender.clone(), task_queue.clone(), state);
+            Self::spawn_worker_thread(
+                worker_function,
+                result_sender.clone(),
+                task_queue.clone(),
+                state,
+            );
         }
 
         Worker {
@@ -45,6 +56,16 @@ where
             num_pending_tasks: 0,
             worker_state,
         }
+    }
+
+    /// Create a new worker with a given worker function. The number of worker threads will be set to the number of available
+    /// logical cores minus one by default. If you want to use a custom thread count, use the `with_num_threads` method to create a worker.
+    /// Spawns worker threads that will process tasks from the queue using the worker function.
+    pub fn new(worker_function: fn(T, &State) -> Option<R>) -> Worker<T, R> {
+        let num_worker_threads = available_parallelism()
+            .map(|n| n.get().saturating_sub(1))
+            .unwrap_or(1);
+        Self::with_num_threads(num_worker_threads, worker_function)
     }
 
     /// Clear the task queue and cancel all tasks as soon as possible.
@@ -78,7 +99,7 @@ where
                     match result {
                         Some(result) => return Some(result),
                         None => (),
-                    }    
+                    }
                 }
                 Err(_) => return None,
             }
@@ -92,7 +113,7 @@ where
             match self.result_receiver.recv().unwrap() {
                 Some(result) => {
                     return result;
-                },
+                }
                 None => (),
             }
         }
@@ -166,7 +187,7 @@ where
                     Work::Terminate => break,
                     Work::Task(task) => {
                         state.set_running();
-                        let result =  worker_function(task, &state);
+                        let result = worker_function(task, &state);
                         if !state.is_cancelled() {
                             if let Err(_) = result_sender.send(result) {
                                 break;
