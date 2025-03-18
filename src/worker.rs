@@ -96,7 +96,7 @@ where
                     self.num_pending_tasks -= 1;
                     match result {
                         Some(result) => return Some(result),
-                        None => (),
+                        None => continue,
                     }
                 }
                 Err(_) => return None,
@@ -108,8 +108,11 @@ where
     /// If no tasks are pending, return None.
     pub fn get_blocking(&mut self) -> Option<R> {
         while self.num_pending_tasks > 0 {
-            if let Some(result) = self.wait_on_channel() {
-                return Some(result);
+            self.num_pending_tasks -= 1;
+            match self.result_receiver.recv() {
+                Ok(Some(result)) => return Some(result),
+                Ok(None) => continue,
+                Err(_) => panic!("Channel closed"),
             }
         }
         None
@@ -126,8 +129,9 @@ where
     /// Returns an iterator over all results.
     /// This function will block until all tasks have been processed.
     pub fn get_iter_blocking(&mut self) -> impl Iterator<Item = R> {
-        (0..self.num_pending_tasks)
-            .map(|_| self.wait_on_channel())
+        (0..)
+            .map(|_| self.get_blocking())
+            .take_while(Option::is_some)
             .flatten()
     }
 
@@ -176,20 +180,6 @@ where
     /// by worker threads and tasks that are in the queue.
     pub fn num_pending_tasks(&self) -> usize {
         self.num_pending_tasks
-    }
-
-    /// BLock until a result is available and return it.
-    fn wait_on_channel(&mut self) -> Option<R> {
-        match self.result_receiver.recv() {
-            Ok(result) => {
-                self.num_pending_tasks -= 1;
-                match result {
-                    Some(result) => Some(result),
-                    None => None,
-                }
-            }
-            Err(_) => None,
-        }
     }
 
     fn spawn_worker_thread(
