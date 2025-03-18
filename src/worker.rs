@@ -126,7 +126,8 @@ where
     /// Returns an iterator over all results.
     /// This function will block until all tasks have been processed.
     pub fn get_iter_blocking(&mut self) -> impl Iterator<Item = R> {
-        (0..self.num_pending_tasks).map(|_| self.wait_on_channel())
+        (0..self.num_pending_tasks)
+            .map(|_| self.wait_on_channel())
             .flatten()
     }
 
@@ -205,9 +206,9 @@ where
                     Work::Terminate => break,
                     Work::Task(task) => {
                         let result = worker_function(task, &state);
-                        let send_value = if state.is_cancelled() { None } else { result };
+                        let result = if state.is_cancelled() { None } else { result };
                             
-                        if let Err(_) = result_sender.send(send_value) {
+                        if let Err(_) = result_sender.send(result) {
                             break;
                         }
                         

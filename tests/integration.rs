@@ -255,7 +255,7 @@ fn test_long_running_worker() {
             results.push(result);
         }
     }
-
+    
     results.extend(worker.get_iter_blocking());
 
     assert_eq!(results.len(), 200);
