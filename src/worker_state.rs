@@ -45,19 +45,19 @@ impl State {
 
     pub(crate) fn set_running(&self) {
         self.is_canceled
-            .store(false, Ordering::Relaxed);
+            .store(false, Ordering::Release);
     }
 
     pub(crate) fn cancel(&self) {
         self.is_canceled
-            .store(true, Ordering::Relaxed);
+            .store(true, Ordering::Release);
     }
 
     /// Returns true if the task has been canceled. The result
     /// of the worker will be ignored. Use this to check if the
     /// task should be canceled for long running tasks.
     pub fn is_cancelled(&self) -> bool {
-        self.is_canceled.load(Ordering::Relaxed)
+        self.is_canceled.load(Ordering::Acquire)
     }
 }
 
