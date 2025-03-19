@@ -104,10 +104,8 @@ where
     pub fn get_blocking(&mut self) -> Option<R> {
         while self.num_pending_tasks > 0 {
             self.num_pending_tasks -= 1;
-            match self.result_receiver.recv() {
-                Ok(Some(result)) => return Some(result),
-                Ok(None) => continue,
-                Err(_) => panic!("Channel closed"),
+            if let Ok(Some(result)) = self.result_receiver.recv() {
+                return Some(result);
             }
         }
         None
