@@ -92,9 +92,8 @@ where
     pub fn get(&mut self) -> Option<R> {
         while let Ok(result) = self.result_receiver.try_recv() {
             self.num_pending_tasks -= 1;
-            match result {
-                Some(result) => return Some(result),
-                None => continue,
+            if let Some(result) = result {
+                return Some(result);
             }
         }
         None
