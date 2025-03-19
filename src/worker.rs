@@ -90,18 +90,14 @@ where
     /// Return the next result. If no result is available, return None.
     /// This function will not block.
     pub fn get(&mut self) -> Option<R> {
-        loop {
-            match self.result_receiver.try_recv() {
-                Ok(result) => {
-                    self.num_pending_tasks -= 1;
-                    match result {
-                        Some(result) => return Some(result),
-                        None => continue,
-                    }
-                }
-                Err(_) => return None,
+        while let Ok(result) = self.result_receiver.try_recv() {
+            self.num_pending_tasks -= 1;
+            match result {
+                Some(result) => return Some(result),
+                None => continue,
             }
         }
+        None
     }
 
     /// Return the next result. If no result is available block until a result is available.
