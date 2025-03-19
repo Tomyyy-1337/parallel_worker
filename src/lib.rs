@@ -8,7 +8,7 @@
 //!  use parallel_worker::{State, Worker};
 //!
 //!  fn main() {
-//!     let mut worker = Worker::new(worker_function);
+//!     let worker = Worker::new(worker_function);
 //!
 //!     worker.add_task(1);
 //!     worker.add_task(2);
@@ -32,7 +32,7 @@
 //! # use parallel_worker::{check_if_cancelled, State, Worker};
 //! # use std::{thread::sleep, time::Duration};
 //! fn main() {
-//!     let mut worker = Worker::new(worker_function);
+//!     let worker = Worker::new(worker_function);
 //!
 //!     worker.add_task(1);
 //!
@@ -49,6 +49,8 @@
 //!     Some(42)
 //! }
 //!
+
+mod cell_utils;
 
 mod task_queue;
 

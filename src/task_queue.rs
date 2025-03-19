@@ -14,8 +14,7 @@ impl<T> InnerTaskQueue<T> {
     }
 
     fn clear_queue(&self) -> usize {
-        let mut tasks = self.tasks.lock().unwrap();
-        tasks.drain(..).len()
+        self.tasks.lock().unwrap().drain(..).len()
     }
 
     fn new() -> InnerTaskQueue<T> {

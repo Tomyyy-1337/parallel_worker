@@ -1,8 +1,10 @@
 use std::{
-    sync::mpsc::{Receiver, Sender}, thread::available_parallelism
+    cell::Cell,
+    sync::mpsc::{Receiver, Sender},
+    thread::available_parallelism,
 };
 
-use crate::{State, task_queue::TaskQueue};
+use crate::{State, cell_utils::CellUpdate, task_queue::TaskQueue};
 
 enum Work<T> {
     Task(T),
@@ -18,7 +20,7 @@ where
     task_queue: TaskQueue<Work<T>>,
     result_receiver: Receiver<Option<R>>,
     num_worker_threads: usize,
-    num_pending_tasks: usize,
+    num_pending_tasks: Cell<usize>,
     worker_state: Vec<State>,
 }
 
@@ -36,24 +38,17 @@ where
         let (result_sender, result_receiver) = std::sync::mpsc::channel();
         let task_queue = TaskQueue::new();
 
-        let mut worker_state = Vec::new();
-        for _ in 0..num_worker_threads.max(1) {
-            let state = State::new();
-            worker_state.push(state.clone());
-            Self::spawn_worker_thread(
-                worker_function,
-                result_sender.clone(),
-                task_queue.clone(),
-                state,
-            );
-        }
-
         Worker {
+            worker_state: Self::start_worker_threads(
+                num_worker_threads,
+                worker_function,
+                result_sender,
+                &task_queue,
+            ),
             task_queue,
             result_receiver,
             num_worker_threads,
-            num_pending_tasks: 0,
-            worker_state,
+            num_pending_tasks: Cell::new(0),
         }
     }
 
@@ -68,30 +63,31 @@ where
     }
 
     /// Clear the task queue and cancel all tasks as soon as possible.
-    pub fn cancel_tasks(&mut self) {
-        self.num_pending_tasks -= self.task_queue.clear_queue();
+    pub fn cancel_tasks(&self) {
+        let tasks_in_queue = self.task_queue.clear_queue();
+        self.num_pending_tasks.modify(|n| n - tasks_in_queue);
         for state in &self.worker_state {
             state.cancel();
         }
     }
 
     /// Add a task to the end of the queue.
-    pub fn add_task(&mut self, task: T) {
-        self.num_pending_tasks += 1;
+    pub fn add_task(&self, task: T) {
+        self.num_pending_tasks.modify(|n| n + 1);
         self.task_queue.push(Work::Task(task));
     }
 
     /// Add multiple tasks to the end of the queue.
-    pub fn add_tasks(&mut self, tasks: impl IntoIterator<Item = T>) {
+    pub fn add_tasks(&self, tasks: impl IntoIterator<Item = T>) {
         let num = self.task_queue.extend(tasks.into_iter().map(Work::Task));
-        self.num_pending_tasks += num;
+        self.num_pending_tasks.modify(|n| n + num);
     }
 
     /// Return the next result. If no result is available, return None.
     /// This function will not block.
-    pub fn get(&mut self) -> Option<R> {
+    pub fn get(&self) -> Option<R> {
         while let Ok(result) = self.result_receiver.try_recv() {
-            self.num_pending_tasks -= 1;
+            self.num_pending_tasks.modify(|n| n - 1);
             if let Some(result) = result {
                 return Some(result);
             }
@@ -101,9 +97,9 @@ where
 
     /// Return the next result. If no result is available block until a result is available.
     /// If no tasks are pending, return None.
-    pub fn get_blocking(&mut self) -> Option<R> {
-        while self.num_pending_tasks > 0 {
-            self.num_pending_tasks -= 1;
+    pub fn get_blocking(&self) -> Option<R> {
+        while self.num_pending_tasks.get() > 0 {
+            self.num_pending_tasks.modify(|n| n - 1);
             if let Ok(Some(result)) = self.result_receiver.recv() {
                 return Some(result);
             }
@@ -113,45 +109,44 @@ where
 
     /// Return an iterator over all available results.
     /// This function will not block.
-    pub fn get_iter(&mut self) -> impl Iterator<Item = R> {
+    pub fn get_iter(&self) -> impl Iterator<Item = R> {
         std::iter::from_fn(|| self.get())
     }
 
     /// Returns an iterator over all results.
     /// This function will block until all tasks have been processed.
-    pub fn get_iter_blocking(&mut self) -> impl Iterator<Item = R> {
+    pub fn get_iter_blocking(&self) -> impl Iterator<Item = R> {
         std::iter::from_fn(|| self.get_blocking())
     }
 
     /// Receive all available results and return them in a vector.
     /// This function will not block.
-    pub fn get_vec(&mut self) -> Vec<R> {
+    pub fn get_vec(&self) -> Vec<R> {
         self.get_iter().collect()
     }
 
     /// Block until all tasks have been processed and return all results in a vector.
-    pub fn get_vec_blocking(&mut self) -> Vec<R> {
+    pub fn get_vec_blocking(&self) -> Vec<R> {
         self.get_iter_blocking().collect()
     }
 
     /// Write available results into the buffer and return the number of results written.
     /// If the buffer is too small to hold all available results, the remaining results will be left in the queue.
     /// This function will not block.
-    pub fn get_buffered(&mut self, buffer: &mut [R]) -> usize {
-        let mut indx = 0;
-        for result in self.get_iter().take(buffer.len()) {
-            buffer[indx] = result;
-            indx += 1;
-        }
-        indx
+    pub fn get_buffered(&self, buffer: &mut [R]) -> usize {
+        self.write_buffered(buffer, self.get_iter())
     }
 
     /// Write all results into the buffer and return the number of results written.
     /// If the buffer is too small to hold all results, the remaining results will be left in the queue.
     /// This function will block until no tasks are pending or the buffer is full.
-    pub fn get_buffered_blocking(&mut self, buffer: &mut [R]) -> usize {
+    pub fn get_buffered_blocking(&self, buffer: &mut [R]) -> usize {
+        self.write_buffered(buffer, self.get_iter_blocking())
+    }
+
+    fn write_buffered(&self, buffer: &mut [R], it: impl Iterator<Item = R>) -> usize {
         let mut indx = 0;
-        for result in self.get_iter_blocking().take(buffer.len()) {
+        for result in it.take(buffer.len()) {
             buffer[indx] = result;
             indx += 1;
         }
@@ -167,7 +162,26 @@ where
     /// Return the number of pebding tasks. This includes tasks that are currently being processed
     /// by worker threads and tasks that are in the queue.
     pub fn num_pending_tasks(&self) -> usize {
-        self.num_pending_tasks
+        self.num_pending_tasks.get()
+    }
+
+    fn start_worker_threads(
+        num_worker_threads: usize,
+        worker_function: fn(T, &State) -> Option<R>,
+        result_sender: Sender<Option<R>>,
+        task_queue: &TaskQueue<Work<T>>,
+    ) -> Vec<State> {
+        (0..num_worker_threads.max(1))
+            .map(|_| State::new())
+            .inspect(|state| {
+                Self::spawn_worker_thread(
+                    worker_function,
+                    result_sender.clone(),
+                    task_queue.clone(),
+                    state.clone(),
+                );
+            })
+            .collect()
     }
 
     fn spawn_worker_thread(

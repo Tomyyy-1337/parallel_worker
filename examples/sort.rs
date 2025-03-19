@@ -3,11 +3,11 @@ use std::{thread::sleep, time::Duration};
 use parallel_worker::{State, Worker};
 
 fn main() {
-    let mut worker = Worker::new(|n: u64, _s: &State| {
+    let worker = Worker::new(|n: u64, _s: &State| {
         sleep(Duration::from_secs(n));
         Some(n)
     });
-    
+
     worker.add_task(7);
     worker.add_task(1);
     worker.add_task(5);

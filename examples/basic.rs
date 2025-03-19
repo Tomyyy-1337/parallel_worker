@@ -3,7 +3,7 @@ use std::{thread::sleep, time::Duration};
 use parallel_worker::{State, Worker, check_if_cancelled};
 
 fn main() {
-    let mut worker = Worker::new(worker_function);
+    let worker = Worker::new(worker_function);
 
     worker.add_task(1);
     worker.add_task(2);

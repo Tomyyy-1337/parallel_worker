@@ -4,7 +4,7 @@ use parallel_worker::{Worker, check_if_cancelled};
 
 #[test]
 fn test_worker_base() {
-    let mut worker = Worker::new(|n, _s| Some(n));
+    let worker = Worker::new(|n, _s| Some(n));
     assert_eq!(worker.num_pending_tasks(), 0);
 
     worker.add_task(1);
@@ -18,7 +18,7 @@ fn test_worker_base() {
 
 #[test]
 fn test_get_if_ready() {
-    let mut worker = Worker::new(|n, _s| Some(n));
+    let worker = Worker::new(|n, _s| Some(n));
 
     worker.add_task(1);
     worker.add_task(2);
@@ -37,7 +37,7 @@ fn test_get_if_ready() {
 
 #[test]
 fn test_receive_all_results() {
-    let mut worker = Worker::new(|n, _s| Some(n));
+    let worker = Worker::new(|n, _s| Some(n));
 
     worker.add_task(1);
     worker.add_task(2);
@@ -56,7 +56,7 @@ fn test_receive_all_results() {
 
 #[test]
 fn test_wait_for_result() {
-    let mut worker = Worker::new(|n, _s| Some(n));
+    let worker = Worker::new(|n, _s| Some(n));
 
     worker.add_task(1);
     worker.add_task(2);
@@ -85,7 +85,7 @@ fn test_wait_for_result() {
 
 #[test]
 fn test_wait_for_all_results() {
-    let mut worker = Worker::new(|n, _s| if n % 2 == 0 { Some(n) } else { None });
+    let worker = Worker::new(|n, _s| if n % 2 == 0 { Some(n) } else { None });
 
     worker.add_task(1);
     worker.add_task(2);
@@ -109,7 +109,7 @@ fn test_wait_for_all_results() {
 
 #[test]
 fn test_receive_results_in_buffer_blocking() {
-    let mut worker = Worker::with_num_threads(4, |n, _s| Some(n));
+    let worker = Worker::with_num_threads(4, |n, _s| Some(n));
 
     worker.add_task(1);
     worker.add_task(2);
@@ -129,7 +129,7 @@ fn test_receive_results_in_buffer_blocking() {
 
 #[test]
 fn test_receive_results_in_buffer() {
-    let mut worker = Worker::with_num_threads(4, |n, _s| Some(n));
+    let worker = Worker::with_num_threads(4, |n, _s| Some(n));
 
     worker.add_task(1);
     worker.add_task(2);
@@ -148,7 +148,7 @@ fn test_receive_results_in_buffer() {
 
 #[test]
 fn test_optional_return() {
-    let mut worker = Worker::new(|n, _s| if n % 2 == 0 { Some(n) } else { None });
+    let worker = Worker::new(|n, _s| if n % 2 == 0 { Some(n) } else { None });
 
     worker.add_task(1);
     worker.add_task(2);
@@ -172,7 +172,7 @@ fn test_optional_return() {
 
 #[test]
 fn test_many_tasks() {
-    let mut worker = Worker::new(|n, _s| Some(n));
+    let worker = Worker::new(|n, _s| Some(n));
 
     for i in 0..1000 {
         worker.add_task(i);
@@ -188,7 +188,7 @@ fn test_many_tasks() {
 
 #[test]
 fn test_get_iter() {
-    let mut worker = Worker::new(|n, _s| Some(n));
+    let worker = Worker::new(|n, _s| Some(n));
 
     worker.add_task(1);
     worker.add_task(2);
@@ -201,7 +201,7 @@ fn test_get_iter() {
 
 #[test]
 fn test_cancel() {
-    let mut worker: Worker<i32, ()> = Worker::new(|_, s| {
+    let worker: Worker<i32, ()> = Worker::new(|_, s| {
         loop {
             check_if_cancelled!(s);
             sleep(std::time::Duration::from_millis(10));
@@ -226,7 +226,7 @@ fn test_cancel() {
 
 #[test]
 fn test_long_running_worker() {
-    let mut worker = Worker::new(|n, _s| {
+    let worker = Worker::new(|n, _s| {
         sleep(std::time::Duration::from_millis(n));
         Some(n)
     });
@@ -248,12 +248,12 @@ fn test_long_running_worker() {
 
 #[test]
 fn test_cancel_high_load() {
-    use std::{thread::sleep, time::Duration};
     use parallel_worker::State;
+    use std::{thread::sleep, time::Duration};
 
     use crate::Worker;
 
-    let mut worker = Worker::new(|n: u64, _s: &State| {
+    let worker = Worker::new(|n: u64, _s: &State| {
         sleep(Duration::from_millis(n));
         Some(n)
     });
@@ -270,6 +270,6 @@ fn test_cancel_high_load() {
 
         worker.add_task(0);
 
-        assert_eq!(worker.get_blocking(), Some(0));    
+        assert_eq!(worker.get_blocking(), Some(0));
     }
 }
