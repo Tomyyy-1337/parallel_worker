@@ -1,6 +1,6 @@
 use std::thread::sleep;
 
-use parallel_worker::{Worker, check_if_cancelled};
+use parallel_worker::{Worker, check_if_cancelled, State};
 
 #[test]
 fn test_worker_base() {
@@ -248,10 +248,7 @@ fn test_long_running_worker() {
 
 #[test]
 fn test_cancel_high_load() {
-    use parallel_worker::State;
     use std::{thread::sleep, time::Duration};
-
-    use crate::Worker;
 
     let worker = Worker::new(|n: u64, _s: &State| {
         sleep(Duration::from_millis(n));
@@ -272,4 +269,42 @@ fn test_cancel_high_load() {
 
         assert_eq!(worker.get_blocking(), Some(0));
     }
+}
+
+#[test]
+fn test_cancel_count() {
+    use std::{thread::sleep, time::Duration};
+
+    let worker = Worker::new(|n: u64, _s: &State| {
+        sleep(Duration::from_millis(20));
+        Some(n)
+    });
+
+    worker.add_tasks(0..50);
+
+    worker.cancel_tasks();
+
+    worker.add_tasks(0..50);
+
+    let num_results = worker.get_iter_blocking().count();
+
+    assert_eq!(num_results, 50);
+
+    for i in 0..100 {
+        worker.add_task(i);
+        worker.add_task(i);
+        worker.add_task(i);
+        worker.cancel_tasks();
+    }
+    assert!(worker.get_blocking().is_none());
+    
+    for i in 0..100 {
+        worker.add_task(i);
+    }
+    worker.cancel_tasks();
+    worker.add_task(0);
+    
+    assert_eq!(worker.get_blocking(), Some(0));
+    assert!(worker.get_blocking().is_none());
+
 }
