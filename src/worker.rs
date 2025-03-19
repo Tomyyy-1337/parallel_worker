@@ -159,7 +159,7 @@ where
         self.task_queue.len()
     }
 
-    /// Return the number of pebding tasks. This includes tasks that are currently being processed
+    /// Return the number of pending tasks. This includes tasks that are currently being processed
     /// by worker threads and tasks that are in the queue.
     pub fn num_pending_tasks(&self) -> usize {
         self.num_pending_tasks.get()
