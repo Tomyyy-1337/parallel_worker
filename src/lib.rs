@@ -38,7 +38,7 @@
 //!
 //!     worker.cancel_tasks();
 //!
-//!     assert_eq!(worker.get_vec_blocking(), vec![]);
+//!     assert!(worker.get_blocking().is_none());
 //! }
 //!
 //! fn worker_function(task: u64, state: &State) -> Option<u64> {

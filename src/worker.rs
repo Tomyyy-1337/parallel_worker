@@ -171,17 +171,18 @@ where
         result_sender: Sender<Option<R>>,
         task_queue: &TaskQueue<Work<T>>,
     ) -> Vec<State> {
-        (0..num_worker_threads.max(1))
-            .map(|_| State::new())
-            .inspect(|state| {
-                Self::spawn_worker_thread(
-                    worker_function,
-                    result_sender.clone(),
-                    task_queue.clone(),
-                    state.clone(),
-                );
-            })
-            .collect()
+        let mut worker_states = Vec::with_capacity(num_worker_threads);
+        for _ in 0..num_worker_threads {
+            let state = State::new();
+            Self::spawn_worker_thread(
+                worker_function,
+                result_sender.clone(),
+                task_queue.clone(),
+                state.clone(),
+            );
+            worker_states.push(state);
+        }
+        worker_states
     }
 
     fn spawn_worker_thread(
