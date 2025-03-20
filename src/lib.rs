@@ -2,7 +2,7 @@
 //!
 //! This crate provides a simple interface for running tasks in parallel.
 //! The `Worker` struct is used to dispatch tasks to worker threads and collect the results.
-//! You can wait for results or revieve currently available results.
+//! You can wait for results or recieve currently available results.
 //!
 //! ```rust
 //!  use parallel_worker::{State, Worker};
