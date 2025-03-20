@@ -4,7 +4,7 @@ use std::sync::{
 };
 
 /// Check if the task has been canceled and return None if it has.
-/// Can be used inside the worker function to check if the task has been canceled.
+/// Can be used inside the worker function.
 ///
 /// ## Example usage:
 /// ```rust ignore
@@ -55,8 +55,7 @@ impl State {
     }
 
     /// Returns true if the task has been canceled. The result
-    /// of the worker will be ignored. Use this to check if the
-    /// task should be canceled for long running tasks.
+    /// of the worker will be ignored. 
     pub fn is_cancelled(&self) -> bool {
         self.is_canceled.load(Ordering::Acquire)
     }

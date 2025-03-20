@@ -53,7 +53,7 @@ where
     }
 
     /// Create a new worker with a given worker function. The number of worker threads will be set to the number of available
-    /// logical cores minus one by default. If you want to use a custom thread count, use the `with_num_threads` method to create a worker.
+    /// logical cores minus one. If you want to use a custom thread count, use the `with_num_threads` method to create a worker.
     /// Spawns worker threads that will process tasks from the queue using the worker function.
     pub fn new(worker_function: fn(T, &State) -> Option<R>) -> Worker<T, R> {
         let num_worker_threads = available_parallelism()
@@ -62,7 +62,9 @@ where
         Self::with_num_threads(num_worker_threads, worker_function)
     }
 
-    /// Clear the task queue and cancel all tasks as soon as possible.
+    /// Clear the task queue and cancel all tasks as soon as possible. 
+    /// The results of canceled tasks will be discarded.
+    /// Canceling the execution of tasks requires the worker function to use the `check_if_cancelled!` macro.
     pub fn cancel_tasks(&self) {
         let tasks_in_queue = self.task_queue.clear_queue();
         self.num_pending_tasks.modify(|n| n - tasks_in_queue);
@@ -71,13 +73,15 @@ where
         }
     }
 
-    /// Add a task to the end of the queue.
+    /// Add a task to the end of the queue. 
+    /// The task will be processed by one of the worker threads.
     pub fn add_task(&self, task: T) {
         self.num_pending_tasks.modify(|n| n + 1);
         self.task_queue.push(Work::Task(task));
     }
 
     /// Add multiple tasks to the end of the queue.
+    /// The tasks will be processed by the worker threads.
     pub fn add_tasks(&self, tasks: impl IntoIterator<Item = T>) {
         let num = self.task_queue.extend(tasks.into_iter().map(Work::Task));
         self.num_pending_tasks.modify(|n| n + num);
@@ -126,6 +130,7 @@ where
     }
 
     /// Block until all tasks have been processed and return all results in a vector.
+    /// This function will block until all tasks have been processed.
     pub fn get_vec_blocking(&self) -> Vec<R> {
         self.get_iter_blocking().collect()
     }
@@ -139,7 +144,7 @@ where
 
     /// Write all results into the buffer and return the number of results written.
     /// If the buffer is too small to hold all results, the remaining results will be left in the queue.
-    /// This function will block until no tasks are pending or the buffer is full.
+    /// This function will block until all tasks have been processed or the buffer is full.
     pub fn get_buffered_blocking(&self, buffer: &mut [R]) -> usize {
         self.write_buffered(buffer, self.get_iter_blocking())
     }
@@ -153,8 +158,8 @@ where
         indx
     }
 
-    /// Return the number of tasks currently in the queue. This does not include tasks that are currently being processed
-    /// by worker threads.
+    /// Return the number of tasks currently in the queue. 
+    /// This does not include tasks that are currently being processed by worker threads.
     pub fn current_queue_size(&self) -> usize {
         self.task_queue.len()
     }

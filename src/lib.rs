@@ -8,26 +8,22 @@
 //!  use parallel_worker::{State, Worker};
 //!
 //!  fn main() {
-//!     let worker = Worker::new(worker_function);
+//!     let worker = Worker::new(|n: u64, _s: &State| Some(42));
 //!
 //!     worker.add_task(1);
 //!     worker.add_task(2);
 //!
-//!     let first_result = worker.get_blocking();
-//!     assert_eq!(first_result, Some(42));
+//!     assert_eq!(worker.get_blocking(), Some(42));
 //!     
-//!     worker.add_tasks(3..10);
+//!     worker.add_tasks(0..10);
 //!
-//!     let results = worker.get_vec_blocking();
-//!     assert!(results.len() == 8);
-//! }
-//!
-//! fn worker_function(task: u64, _state: &State) -> Option<u64> {
-//!     Some(42)
+//!     assert_eq!(worker.get_iter_blocking().count(), 11);
 //! }
 //! ```
 //!
 //! ## Tasks can be canceled
+//! Canceled tasks will stop executing as soon as they reach a `check_if_cancelled!`.
+//! Results of canceled tasks will be discarded even if they have already been computed.   
 //! ```rust
 //! # use parallel_worker::{check_if_cancelled, State, Worker};
 //! # use std::{thread::sleep, time::Duration};
@@ -43,12 +39,30 @@
 //!
 //! fn worker_function(task: u64, state: &State) -> Option<u64> {
 //!     for i in 0.. {
-//!         sleep(Duration::from_secs(1)); // Do some work
+//!         sleep(Duration::from_millis(50)); // Do some work
 //!         check_if_cancelled!(state); // Check if the task has been canceled
 //!     }
 //!     Some(42)
 //! }
-//!
+//!```
+//! ## Results can be Optinal
+//! If a worker returns `None` the result will be discarded. 
+//! ```rust
+//! # use parallel_worker::{State, Worker};
+//! fn main() {
+//!     let worker = Worker::new(|n: u64, _s: &State| {
+//!         if n % 2 == 0 {
+//!             Some(n)
+//!         } else {
+//!             None
+//!         }
+//!     });
+//!     
+//!     worker.add_tasks(1..=10);
+//! 
+//!     assert_eq!(worker.get_iter_blocking().count(), 5); 
+//! }
+//! ```
 
 mod cell_utils;
 
