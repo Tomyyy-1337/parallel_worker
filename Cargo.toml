@@ -3,6 +3,11 @@ name = "parallel_worker"
 version = "0.1.0"
 edition = "2024"
 authors = ["Tom Paßberg"]
-
+license = "MIT"
+description = "A parallel worker implementation in Rust. Allows to start tasks in parallel and receive the results blocking or non-blocking."
+repository = "https://github.com/Tomyyy-1337/parallel_worker"
+keywords = ["concurrency", "parallel", "worker", "thread", "pool"]
+categories = ["concurrency"]
+readme = "README.md"
 
 [dependencies]
