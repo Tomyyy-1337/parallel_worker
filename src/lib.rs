@@ -45,7 +45,7 @@
 //!     Some(42)
 //! }
 //!```
-//! ## Results can be optinal
+//! ## Results can be optional
 //! If a worker returns `None` the result will be discarded. 
 //! ```rust
 //! # use parallel_worker::{State, Worker};
