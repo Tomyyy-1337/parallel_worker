@@ -1,6 +1,22 @@
 use std::thread::sleep;
 
-use parallel_worker::{Worker, check_if_cancelled, State};
+use parallel_worker::{check_if_cancelled, BasicWorker, State, Worker, WorkerMethods};
+
+#[test]
+fn basic_worker() {
+    let worker = BasicWorker::new(|n: u64| n);
+
+    worker.add_task(1);
+    worker.add_task(2);
+    worker.add_task(3);
+
+    let s: u64 = worker.get_iter_blocking().sum();
+    assert_eq!(s, 6);
+
+    worker.add_tasks(0..10);
+
+    assert_eq!(worker.get_iter_blocking().count(), 10);
+}
 
 #[test]
 fn test_worker_base() {
