@@ -8,6 +8,8 @@ You can wait for results or recieve currently available results.
 There are two types of workers:
 - `BasicWorker` is a simple worker that processes tasks in parallel using multiple worker threads.
 - `Worker` has additional functionality for optional results and task cancelation during execution.
+
+## Example
 ```rust
  use parallel_worker::prelude::*;
 
