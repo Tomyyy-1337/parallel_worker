@@ -56,7 +56,7 @@ impl State {
     }
 
     /// Returns true if the task has been canceled. The result
-    /// of the worker will be ignored. 
+    /// of the worker will be ignored.
     pub fn is_cancelled(&self) -> bool {
         self.is_canceled.load(Ordering::Acquire)
     }

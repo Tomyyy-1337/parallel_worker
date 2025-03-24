@@ -1,11 +1,12 @@
-use std::{
-    sync::mpsc::Sender,
-    thread::available_parallelism,
+use std::sync::mpsc::Sender;
+
+use crate::{
+    BasicWorker, State,
+    task_queue::TaskQueue,
+    worker_methods::{Work, WorkerInit, WorkerMethods},
 };
 
-use crate::{task_queue::TaskQueue, worker_methods::{Work, WorkerInit, WorkerMethods}, BasicWorker, State};
-
-/// A worker that processes tasks in parallel using multiple worker threads. 
+/// A worker that processes tasks in parallel using multiple worker threads.
 /// Allows for optional results and task cancelation.
 pub struct Worker<T, R>
 where
@@ -16,8 +17,8 @@ where
     worker_state: Vec<State>,
 }
 
-impl<T, R> WorkerMethods<T, R> for Worker<T, R> 
-where 
+impl<T, R> WorkerMethods<T, R> for Worker<T, R>
+where
     T: Send + 'static,
     R: Send + 'static,
 {
@@ -29,7 +30,7 @@ where
         self.inner.add_tasks(tasks);
     }
 
-    /// Clear the task queue and cancel all tasks as soon as possible. 
+    /// Clear the task queue and cancel all tasks as soon as possible.
     /// The results of canceled tasks will be discarded.
     /// Canceling the execution of tasks requires the worker function to use the `check_if_cancelled!` macro.
     fn cancel_tasks(&self) {
@@ -56,7 +57,7 @@ where
     }
 }
 
-impl <T, R, F> WorkerInit<T, R, F> for Worker<T, R>
+impl<T, R, F> WorkerInit<T, R, F> for Worker<T, R>
 where
     T: Send + 'static,
     R: Send + 'static,
@@ -73,18 +74,17 @@ where
                 result_sender,
                 &task_queue,
             ),
-            inner: BasicWorker::constructor(task_queue, result_receiver, num_worker_threads)
+            inner: BasicWorker::constructor(task_queue, result_receiver, num_worker_threads),
         }
     }
 }
-
 
 fn start_worker_threads<T, R, F>(
     num_worker_threads: usize,
     worker_function: F,
     result_sender: Sender<Option<R>>,
     task_queue: &TaskQueue<Work<T>>,
-) -> Vec<State> 
+) -> Vec<State>
 where
     T: Send + 'static,
     R: Send + 'static,

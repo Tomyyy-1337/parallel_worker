@@ -1,11 +1,13 @@
-use std::{
-    cell::Cell, result, sync::mpsc::{Receiver, Sender}, thread::available_parallelism
+use std::{cell::Cell, sync::mpsc::Receiver};
+
+use crate::{
+    cell_utils::CellUpdate,
+    task_queue::TaskQueue,
+    worker_methods::{Work, WorkerInit, WorkerMethods},
 };
 
-use crate::{cell_utils::CellUpdate, task_queue::TaskQueue, worker_methods::{Work, WorkerInit, WorkerMethods}};
-
-/// A worker that processes tasks in parallel using multiple worker threads. 
-pub struct BasicWorker<T, R> 
+/// A worker that processes tasks in parallel using multiple worker threads.
+pub struct BasicWorker<T, R>
 where
     T: Send + 'static,
     R: Send + 'static,
@@ -16,8 +18,8 @@ where
     num_pending_tasks: Cell<usize>,
 }
 
-impl<T, R> WorkerMethods<T, R> for BasicWorker<T, R> 
-where 
+impl<T, R> WorkerMethods<T, R> for BasicWorker<T, R>
+where
     T: Send + 'static,
     R: Send + 'static,
 {
@@ -25,13 +27,13 @@ where
         self.num_pending_tasks.modify(|n| n + 1);
         self.task_queue.push(Work::Task(task));
     }
-    
-    fn add_tasks(&self, tasks: impl IntoIterator<Item = T>){
+
+    fn add_tasks(&self, tasks: impl IntoIterator<Item = T>) {
         let num = self.task_queue.extend(tasks.into_iter().map(Work::Task));
         self.num_pending_tasks.modify(|n| n + num);
     }
-    
-    /// Clear the task queue. Ongoing tasks will not be canceled. 
+
+    /// Clear the task queue. Ongoing tasks will not be canceled.
     fn cancel_tasks(&self) {
         let tasks_in_queue = self.task_queue.clear_queue();
         self.num_pending_tasks.modify(|n| n - tasks_in_queue);
@@ -62,8 +64,8 @@ where
     }
 }
 
-impl<T, R, F> WorkerInit<T, R, F> for BasicWorker<T, R> 
-where 
+impl<T, R, F> WorkerInit<T, R, F> for BasicWorker<T, R>
+where
     T: Send + 'static,
     R: Send + 'static,
     F: Fn(T) -> R + Send + Copy + 'static,

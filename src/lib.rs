@@ -26,7 +26,7 @@
 //! Results of canceled tasks will be discarded even if they have already been computed.   
 //! ```rust
 //! use parallel_worker::prelude::*;
-//! 
+//!
 //! # use std::{thread::sleep, time::Duration};
 //! fn main() {
 //!     let worker = Worker::new(worker_function);
@@ -47,10 +47,10 @@
 //! }
 //!```
 //! ## Results can be optional
-//! If a worker returns `None` the result will be discarded. 
+//! If a worker returns `None` the result will be discarded.
 //! ```rust
 //! use parallel_worker::prelude::*;
-//! 
+//!
 //! fn main() {
 //!     let worker = Worker::new(|n: u64, _s: &State| {
 //!         if n % 2 == 0 {
@@ -61,8 +61,8 @@
 //!     });
 //!     
 //!     worker.add_tasks(1..=10);
-//! 
-//!     assert_eq!(worker.get_iter_blocking().count(), 5); 
+//!
+//!     assert_eq!(worker.get_iter_blocking().count(), 5);
 //! }
 //! ```
 
@@ -74,8 +74,8 @@ mod worker_state;
 pub use crate::worker_state::State;
 
 mod worker_methods;
-pub use crate::worker_methods::WorkerMethods;
 pub use crate::worker_methods::WorkerInit;
+pub use crate::worker_methods::WorkerMethods;
 
 mod worker;
 pub use crate::worker::Worker;
@@ -84,10 +84,10 @@ mod basic_worker;
 pub use crate::basic_worker::BasicWorker;
 
 pub mod prelude {
-    pub use crate::worker_methods::WorkerMethods;
-    pub use crate::worker_methods::WorkerInit;
-    pub use crate::worker::Worker;
     pub use crate::basic_worker::BasicWorker;
-    pub use crate::worker_state::State;
     pub use crate::check_if_cancelled;
+    pub use crate::worker::Worker;
+    pub use crate::worker_methods::WorkerInit;
+    pub use crate::worker_methods::WorkerMethods;
+    pub use crate::worker_state::State;
 }

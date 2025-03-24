@@ -8,8 +8,8 @@ pub trait WorkerInit<T, R, F> {
     /// Create a new worker with a given worker function. The number of worker threads will be set to the number of available
     /// logical cores minus one. If you want to use a custom thread count, use the `with_num_threads` method to create a worker.
     /// Spawns worker threads that will process tasks from the queue using the worker function.
-    fn new(worker_function: F) -> Self 
-    where 
+    fn new(worker_function: F) -> Self
+    where
         Self: Sized,
     {
         let num_worker_threads = available_parallelism()
@@ -20,7 +20,7 @@ pub trait WorkerInit<T, R, F> {
 }
 
 pub trait WorkerMethods<T, R> {
-    /// Add a task to the end of the queue. 
+    /// Add a task to the end of the queue.
     /// The task will be processed by one of the worker threads.
     fn add_task(&self, task: T);
 
@@ -34,7 +34,7 @@ pub trait WorkerMethods<T, R> {
     /// Return the next result. If no result is available, return None.
     /// This function will not block.
     fn get(&self) -> Option<R>;
-    
+
     /// Return the next result. If no result is available block until a result is available.
     /// If no tasks are pending, return None.
     fn get_blocking(&self) -> Option<R>;
@@ -77,7 +77,7 @@ pub trait WorkerMethods<T, R> {
         write_buffered(buffer, self.get_iter_blocking())
     }
 
-    /// Return the number of tasks currently in the queue. 
+    /// Return the number of tasks currently in the queue.
     /// This does not include tasks that are currently being processed by worker threads.
     fn current_queue_size(&self) -> usize;
 
@@ -86,8 +86,7 @@ pub trait WorkerMethods<T, R> {
     fn num_pending_tasks(&self) -> usize;
 }
 
-
-pub (crate) enum Work<T> {
+pub(crate) enum Work<T> {
     Task(T),
     Terminate,
 }

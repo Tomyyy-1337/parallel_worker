@@ -313,16 +313,15 @@ fn test_cancel_count() {
         worker.cancel_tasks();
     }
     assert!(worker.get_blocking().is_none());
-    
+
     for i in 0..100 {
         worker.add_task(i);
     }
     worker.cancel_tasks();
     worker.add_task(0);
-    
+
     assert_eq!(worker.get_blocking(), Some(0));
     assert!(worker.get_blocking().is_none());
 
     drop(worker);
 }
-
