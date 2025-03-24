@@ -87,4 +87,5 @@ pub mod prelude {
     pub use crate::worker::Worker;
     pub use crate::basic_worker::BasicWorker;
     pub use crate::worker_state::State;
+    pub use crate::check_if_cancelled;
 }
