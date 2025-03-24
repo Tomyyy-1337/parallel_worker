@@ -30,9 +30,9 @@ where
         self.inner.add_tasks(tasks);
     }
 
-    /// Clear the task queue and cancel all tasks as soon as possible.
-    /// The results of canceled tasks will be discarded.
-    /// Canceling the execution of tasks requires the worker function to use the [`crate::check_if_cancelled!`] macro.
+    /// Clear the task queue and cancel all ongoing tasks as soon as possible.
+    /// The results of canceled tasks will be discarded. Results of already completed tasks will remain unaffected.
+    /// Canceling tasks during their execution requires the worker function to use the [`crate::check_if_cancelled!`] macro.
     fn cancel_tasks(&self) {
         self.inner.cancel_tasks();
         for state in &self.worker_state {
