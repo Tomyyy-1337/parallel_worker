@@ -1,7 +1,7 @@
 //! # Parallel Worker
 //!
 //! This crate provides a simple interface for running tasks in parallel.
-//! The [`Worker`] or [`BasicWorker`] struct are used to dispatch tasks to worker threads and collect the results.
+//! The [`Worker`] or [`BasicWorker`] structs are used to dispatch tasks to worker threads and collect the results.
 //! You can wait for results or recieve currently available results.
 //! 
 //! ## Workers
