@@ -75,24 +75,38 @@ where
         let task_queue = TaskQueue::new();
 
         for _ in 0..num_worker_threads {
-            let task_queue = task_queue.clone();
-            let result_sender = result_sender.clone();
-            std::thread::spawn(move || {
-                loop {
-                    match task_queue.wait_for_task_and_then(|| ()) {
-                        Work::Terminate => break,
-                        Work::Task(task) => {
-                            if let Err(_) = result_sender.send(worker_function(task)) {
-                                break;
-                            }
-                        }
-                    }
-                }
-            });
+            spawn_worker_thread(
+                worker_function,
+                result_sender.clone(),
+                task_queue.clone(),
+            );
         }
 
         BasicWorker::constructor(task_queue, result_receiver, num_worker_threads)
     }
+}
+
+fn spawn_worker_thread<T, R, F>(
+    worker_function: F,
+    result_sender: std::sync::mpsc::Sender<R>,
+    task_queue: TaskQueue<Work<T>>,
+) where
+    T: Send + 'static,
+    R: Send + 'static,
+    F: Fn(T) -> R + Send + Copy + 'static,
+{
+    std::thread::spawn(move || {
+        loop {
+            match task_queue.wait_for_task_and_then(|| ()) {
+                Work::Terminate => break,
+                Work::Task(task) => {
+                    if let Err(_) = result_sender.send(worker_function(task)) {
+                        break;
+                    }
+                }
+            }
+        }
+    });
 }
 
 impl<T, R> BasicWorker<T, R>

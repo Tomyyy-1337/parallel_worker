@@ -67,41 +67,23 @@ where
         let (result_sender, result_receiver) = std::sync::mpsc::channel();
         let task_queue = TaskQueue::new();
 
-        Worker {
-            worker_state: start_worker_threads(
-                num_worker_threads,
+        let mut worker_state = Vec::with_capacity(num_worker_threads);
+        for _ in 0..num_worker_threads {
+            let state = State::new();
+            spawn_worker_thread(
                 worker_function,
-                result_sender,
-                &task_queue,
-            ),
+                result_sender.clone(),
+                task_queue.clone(),
+                state.clone(),
+            );
+            worker_state.push(state);
+        }
+
+        Worker {
+            worker_state,
             inner: BasicWorker::constructor(task_queue, result_receiver, num_worker_threads),
         }
     }
-}
-
-fn start_worker_threads<T, R, F>(
-    num_worker_threads: usize,
-    worker_function: F,
-    result_sender: Sender<Option<R>>,
-    task_queue: &TaskQueue<Work<T>>,
-) -> Vec<State>
-where
-    T: Send + 'static,
-    R: Send + 'static,
-    F: Fn(T, &State) -> Option<R> + Send + Copy + 'static,
-{
-    let mut worker_states = Vec::with_capacity(num_worker_threads);
-    for _ in 0..num_worker_threads {
-        let state = State::new();
-        spawn_worker_thread(
-            worker_function,
-            result_sender.clone(),
-            task_queue.clone(),
-            state.clone(),
-        );
-        worker_states.push(state);
-    }
-    worker_states
 }
 
 fn spawn_worker_thread<T, R, F>(
