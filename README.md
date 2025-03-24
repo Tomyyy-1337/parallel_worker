@@ -1,13 +1,13 @@
 # Parallel Worker
 
 This crate provides a simple interface for running tasks in parallel.
-The [`Worker`] or [`BasicWorker`] struct are used to dispatch tasks to worker threads and collect the results.
+The `Worker` or `BasicWorker` struct are used to dispatch tasks to worker threads and collect the results.
 You can wait for results or recieve currently available results.
 
 ## Workers
 There are two types of workers:
-- [`BasicWorker`] is a simple worker that processes tasks in parallel using multiple worker threads.
-- [`Worker`] has additional functionality for optional results and task cancelation during execution.
+- `BasicWorker` is a simple worker that processes tasks in parallel using multiple worker threads.
+- `Worker` has additional functionality for optional results and task cancelation during execution.
 ```rust
  use parallel_worker::prelude::*;
 
