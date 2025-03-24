@@ -9,10 +9,6 @@ struct InnerTaskQueue<T> {
 }
 
 impl<T> InnerTaskQueue<T> {
-    fn len(&self) -> usize {
-        self.tasks.lock().unwrap().len()
-    }
-
     fn clear_queue(&self) -> usize {
         self.tasks.lock().unwrap().drain(..).len()
     }
@@ -56,6 +52,10 @@ impl<T> InnerTaskQueue<T> {
             }
         }
     }
+
+    fn len(&self) -> usize {
+        self.tasks.lock().unwrap().len()
+    }
 }
 
 pub struct TaskQueue<T> {
@@ -67,10 +67,6 @@ impl<T> TaskQueue<T> {
         TaskQueue {
             inner: Arc::new(InnerTaskQueue::new()),
         }
-    }
-
-    pub fn len(&self) -> usize {
-        self.inner.len()
     }
 
     pub fn clear_queue(&self) -> usize {
@@ -87,6 +83,10 @@ impl<T> TaskQueue<T> {
 
     pub fn wait_for_task_and_then(&self, f: impl Fn()) -> T {
         self.inner.wait_for_task_and_then(f)
+    }
+
+    pub fn len(&self) -> usize {
+        self.inner.len()
     }
 }
 
@@ -107,15 +107,15 @@ mod tests {
     #[test]
     fn test_task_queue() {
         let task_queue = TaskQueue::new();
-        assert_eq!(task_queue.len(), 0);
+        assert_eq!(task_queue.inner.tasks.lock().unwrap().len(), 0);
         task_queue.push(1);
-        assert_eq!(task_queue.len(), 1);
+        assert_eq!(task_queue.inner.tasks.lock().unwrap().len(), 1);
         task_queue.push(2);
-        assert_eq!(task_queue.len(), 2);
+        assert_eq!(task_queue.inner.tasks.lock().unwrap().len(), 2);
         assert_eq!(task_queue.wait_for_task_and_then(|| ()), 1);
-        assert_eq!(task_queue.len(), 1);
+        assert_eq!(task_queue.inner.tasks.lock().unwrap().len(), 1);
         assert_eq!(task_queue.wait_for_task_and_then(|| ()), 2);
-        assert_eq!(task_queue.len(), 0);
+        assert_eq!(task_queue.inner.tasks.lock().unwrap().len(), 0);
 
         let task_queue_clone = task_queue.clone();
         let t = std::thread::spawn(move || task_queue_clone.wait_for_task_and_then(|| ()));

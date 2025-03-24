@@ -21,7 +21,7 @@ fn basic_worker() {
 #[test]
 fn test_worker_base() {
     let worker = Worker::new(|n, _s| Some(n));
-    assert_eq!(worker.num_pending_tasks(), 0);
+    assert_eq!(worker.pending_tasks(), 0);
 
     worker.add_task(1);
     worker.add_task(2);
@@ -78,25 +78,19 @@ fn test_wait_for_result() {
     worker.add_task(2);
     worker.add_task(3);
 
-    let mut results = Vec::new();
-    while worker.num_pending_tasks() > 0 {
-        results.push(worker.get_blocking());
-    }
+    let mut results = worker.get_vec_blocking();
     results.sort_unstable();
-    assert_eq!(results, vec![Some(1), Some(2), Some(3)]);
+    assert_eq!(results, vec![1, 2, 3]);
 
     assert_eq!(worker.get_blocking(), None);
 
     worker.add_task(4);
     worker.add_task(5);
 
-    let mut results = Vec::new();
-    while worker.num_pending_tasks() > 0 {
-        results.push(worker.get_blocking());
-    }
+    let mut results = worker.get_vec_blocking();
 
     results.sort_unstable();
-    assert_eq!(results, vec![Some(4), Some(5)]);
+    assert_eq!(results, vec![4, 5]);
 }
 
 #[test]

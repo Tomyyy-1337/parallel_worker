@@ -79,13 +79,9 @@ pub trait WorkerMethods<T, R> {
         write_buffered(buffer, self.get_iter_blocking())
     }
 
-    /// Return the number of tasks currently in the queue.
-    /// This does not include tasks that are currently being processed by worker threads.
-    fn current_queue_size(&self) -> usize;
-
-    /// Return the number of pending tasks. This includes tasks that are currently being processed
-    /// by worker threads and tasks that are in the queue.
-    fn num_pending_tasks(&self) -> usize;
+    /// Return the number of pending tasks. 
+    /// This only includes tasks that have been added to the queue but have not started processing.
+    fn pending_tasks(&self) -> usize;
 }
 
 pub(crate) enum Work<T> {

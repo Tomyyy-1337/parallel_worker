@@ -55,12 +55,8 @@ where
         None
     }
 
-    fn current_queue_size(&self) -> usize {
+    fn pending_tasks(&self) -> usize {
         self.task_queue.len()
-    }
-
-    fn num_pending_tasks(&self) -> usize {
-        self.num_pending_tasks.get()
     }
 }
 

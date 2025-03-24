@@ -48,12 +48,8 @@ where
         self.inner.get_iter_blocking().flatten().next()
     }
 
-    fn current_queue_size(&self) -> usize {
-        self.inner.current_queue_size()
-    }
-
-    fn num_pending_tasks(&self) -> usize {
-        self.inner.num_pending_tasks()
+    fn pending_tasks(&self) -> usize {
+        self.inner.pending_tasks()
     }
 }
 
