@@ -4,12 +4,7 @@ use std::{
     thread::available_parallelism,
 };
 
-use crate::{cell_utils::CellUpdate, task_queue::TaskQueue, State, WorkerMethods};
-
-enum Work<T> {
-    Task(T),
-    Terminate,
-}
+use crate::{cell_utils::CellUpdate, task_queue::TaskQueue, worker_methods::{Work, WorkerMethods}, State};
 
 /// A worker that processes tasks in parallel using multiple worker threads. 
 /// Allows for optional results and task cancelation.
@@ -30,6 +25,16 @@ where
     T: Send + 'static,
     R: Send + 'static,
 {
+    fn add_task(&self, task: T) {
+        self.num_pending_tasks.modify(|n| n + 1);
+        self.task_queue.push(Work::Task(task));
+    }
+    
+    fn add_tasks(&self, tasks: impl IntoIterator<Item = T>) {
+        let num = self.task_queue.extend(tasks.into_iter().map(Work::Task));
+        self.num_pending_tasks.modify(|n| n + num);
+    }
+
     /// Clear the task queue and cancel all tasks as soon as possible. 
     /// The results of canceled tasks will be discarded.
     /// Canceling the execution of tasks requires the worker function to use the `check_if_cancelled!` macro.
@@ -41,22 +46,6 @@ where
         }
     }
 
-    /// Add a task to the end of the queue. 
-    /// The task will be processed by one of the worker threads.
-    fn add_task(&self, task: T) {
-        self.num_pending_tasks.modify(|n| n + 1);
-        self.task_queue.push(Work::Task(task));
-    }
-
-    /// Add multiple tasks to the end of the queue.
-    /// The tasks will be processed by the worker threads.
-    fn add_tasks(&self, tasks: impl IntoIterator<Item = T>) {
-        let num = self.task_queue.extend(tasks.into_iter().map(Work::Task));
-        self.num_pending_tasks.modify(|n| n + num);
-    }
-
-    /// Return the next result. If no result is available, return None.
-    /// This function will not block.
     fn get(&self) -> Option<R> {
         while let Ok(result) = self.result_receiver.try_recv() {
             self.num_pending_tasks.modify(|n| n - 1);
@@ -67,8 +56,6 @@ where
         None
     }
 
-    /// Return the next result. If no result is available block until a result is available.
-    /// If no tasks are pending, return None.
     fn get_blocking(&self) -> Option<R> {
         while self.num_pending_tasks.get() > 0 {
             self.num_pending_tasks.modify(|n| n - 1);

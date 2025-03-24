@@ -4,12 +4,7 @@ use std::{
     thread::available_parallelism,
 };
 
-use crate::{cell_utils::CellUpdate, task_queue::TaskQueue, WorkerMethods};
-
-enum Work<T> {
-    Task(T),
-    Terminate,
-}
+use crate::{cell_utils::CellUpdate, task_queue::TaskQueue, worker_methods::{Work, WorkerMethods}};
 
 /// A worker that processes tasks in parallel using multiple worker threads. 
 pub struct BasicWorker<T, R>
@@ -28,28 +23,22 @@ where
     T: Send + 'static,
     R: Send + 'static,
 {
-    /// Add a task to the end of the queue. 
-    /// The task will be processed by one of the worker threads.
     fn add_task(&self, task: T) {
         self.num_pending_tasks.modify(|n| n + 1);
         self.task_queue.push(Work::Task(task));
     }
     
-    /// Add multiple tasks to the end of the queue.
-    /// The tasks will be processed by the worker threads.
     fn add_tasks(&self, tasks: impl IntoIterator<Item = T>){
         let num = self.task_queue.extend(tasks.into_iter().map(Work::Task));
         self.num_pending_tasks.modify(|n| n + num);
     }
     
-     /// Clear the task queue. Ongoing tasks will not be canceled. 
+    /// Clear the task queue. Ongoing tasks will not be canceled. 
     fn cancel_tasks(&self) {
         let tasks_in_queue = self.task_queue.clear_queue();
         self.num_pending_tasks.modify(|n| n - tasks_in_queue);
     }
 
-    /// Return the next result. If no result is available, return None.
-    /// This function will not block.
     fn get(&self) -> Option<R> {
         self.num_pending_tasks.modify(|n| n - 1);
         if let Ok(result) = self.result_receiver.try_recv() {
@@ -58,8 +47,6 @@ where
         None
     }
 
-    /// Return the next result. If no result is available block until a result is available.
-    /// If no tasks are pending, return None.
     fn get_blocking(&self) -> Option<R> {
         if self.num_pending_tasks.get() > 0 {
             self.num_pending_tasks.modify(|n| n - 1);

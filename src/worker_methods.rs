@@ -1,13 +1,21 @@
 pub trait WorkerMethods<T, R> {
-    /// Add a task to the worker.
+    /// Add a task to the end of the queue. 
+    /// The task will be processed by one of the worker threads.
     fn add_task(&self, task: T);
-    /// Add multiple tasks to the worker.
+
+    /// Add multiple tasks to the end of the queue.
+    /// The tasks will be processed by the worker threads.
     fn add_tasks(&self, tasks: impl IntoIterator<Item = T>);
+
     /// Cancel all tasks.
     fn cancel_tasks(&self);
-    /// Get the result of a task.
+
+    /// Return the next result. If no result is available, return None.
+    /// This function will not block.
     fn get(&self) -> Option<R>;
-    /// Get the result of a task.
+    
+    /// Return the next result. If no result is available block until a result is available.
+    /// If no tasks are pending, return None.
     fn get_blocking(&self) -> Option<R>;
 
     /// Return an iterator over all available results.
@@ -54,6 +62,11 @@ pub trait WorkerMethods<T, R> {
     /// Return the number of pending tasks. This includes tasks that are currently being processed
     /// by worker threads and tasks that are in the queue.
     fn num_pending_tasks(&self) -> usize;
+}
+
+pub (crate) enum Work<T> {
+    Task(T),
+    Terminate,
 }
 
 fn write_buffered<R>(buffer: &mut [R], it: impl Iterator<Item = R>) -> usize {

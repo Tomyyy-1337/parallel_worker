@@ -5,7 +5,7 @@
 //! You can wait for results or recieve currently available results.
 //!
 //! ```rust
-//!  use parallel_worker::{State, BasicWorker, WorkerMethods};
+//!  use parallel_worker::prelude::*;
 //!
 //!  fn main() {
 //!     let worker = BasicWorker::new(|n| 42);
@@ -25,7 +25,8 @@
 //! Canceled tasks will stop executing as soon as they reach a `check_if_cancelled!`.
 //! Results of canceled tasks will be discarded even if they have already been computed.   
 //! ```rust
-//! # use parallel_worker::{check_if_cancelled, State, Worker, WorkerMethods};
+//! use parallel_worker::prelude::*;
+//! 
 //! # use std::{thread::sleep, time::Duration};
 //! fn main() {
 //!     let worker = Worker::new(worker_function);
@@ -48,7 +49,8 @@
 //! ## Results can be optional
 //! If a worker returns `None` the result will be discarded. 
 //! ```rust
-//! # use parallel_worker::{State, Worker, WorkerMethods};
+//! use parallel_worker::prelude::*;
+//! 
 //! fn main() {
 //!     let worker = Worker::new(|n: u64, _s: &State| {
 //!         if n % 2 == 0 {
@@ -79,3 +81,10 @@ pub use crate::worker::Worker;
 
 mod basic_worker;
 pub use crate::basic_worker::BasicWorker;
+
+pub mod prelude {
+    pub use crate::worker_methods::WorkerMethods;
+    pub use crate::worker::Worker;
+    pub use crate::basic_worker::BasicWorker;
+    pub use crate::worker_state::State;
+}

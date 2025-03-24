@@ -323,4 +323,6 @@ fn test_cancel_count() {
     assert_eq!(worker.get_blocking(), Some(0));
     assert!(worker.get_blocking().is_none());
 
+    drop(worker);
 }
+

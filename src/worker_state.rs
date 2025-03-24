@@ -4,7 +4,8 @@ use std::sync::{
 };
 
 /// Check if the task has been canceled and return None if it has.
-/// Can be used inside the worker function.
+/// Can be used inside the worker function of a `Worker`. Can not be
+/// used with the `BasicWorker`.
 ///
 /// ## Example usage:
 /// ```rust ignore
