@@ -5,9 +5,10 @@ The `Worker` struct is used to dispatch tasks to worker threads and collect the 
 You can wait for results or recieve currently available results.
 
 ```rust
- use parallel_worker::{State, Worker};
+ use parallel_worker::prelude::*;
+
  fn main() {
-    let worker = Worker::new(|n: u64, _s: &State| Some(42));
+    let worker = BasicWorker::new(|n: u64| 42);
     worker.add_task(1);
     worker.add_task(2);
     assert_eq!(worker.get_blocking(), Some(42));
@@ -23,6 +24,8 @@ Canceled tasks will stop executing as soon as they reach a `check_if_cancelled!`
 Results of canceled tasks will be discarded even if they have already been computed.   
 
 ```rust
+use parallel_worker::prelude::*;
+
 fn main() {
     let worker = Worker::new(worker_function);
     worker.add_task(1);
@@ -43,6 +46,8 @@ fn worker_function(task: u64, state: &State) -> Option<u64> {
 If a worker returns `None` the result will be discarded. 
 
 ```rust
+use parallel_worker::prelude::*;
+
 fn main() {
     let worker = Worker::new(|n: u64, _s: &State| {
         if n % 2 == 0 {
