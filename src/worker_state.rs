@@ -3,7 +3,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 
-/// Check if the task has been canceled and return None if it has.
+/// Check if the task has been canceled and return [`None`] if it has.
 /// Can be used inside the worker function of a [`crate::Worker`]. Can not be
 /// used with the [`crate::BasicWorker`].
 ///

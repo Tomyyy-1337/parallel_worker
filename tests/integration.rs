@@ -319,3 +319,28 @@ fn test_cancel_count() {
 
     drop(worker);
 }
+
+#[test]
+fn test_reset() {
+    let worker = BasicWorker::new(|n: u64| {
+        sleep(std::time::Duration::from_millis(n));
+        n
+    });
+    
+    worker.add_task(1);
+    worker.add_task(2);
+    worker.add_task(3);
+    worker.add_task(200);
+    worker.add_task(201);
+    worker.add_task(202);
+
+    
+    sleep(std::time::Duration::from_millis(50));
+
+    worker.reset();
+
+    worker.add_task(203);
+
+    assert_eq!(worker.get_blocking(), Some(203));
+    assert!(worker.get_blocking().is_none());
+}
