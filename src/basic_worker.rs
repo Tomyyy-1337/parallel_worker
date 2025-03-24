@@ -24,8 +24,8 @@ where
     R: Send + 'static,
 {
     fn add_task(&self, task: T) {
-        self.num_pending_tasks.modify(|n| n + 1);
         self.task_queue.push(Work::Task(task));
+        self.num_pending_tasks.modify(|n| n + 1);
     }
 
     fn add_tasks(&self, tasks: impl IntoIterator<Item = T>) {
