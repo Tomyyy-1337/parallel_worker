@@ -41,7 +41,7 @@ fn worker_function(task: u64, state: &State) -> Option<u64> {
 }
 ```
 
-## Results can be optinal
+## Results can be optional
 
 If a worker returns `None` the result will be discarded. 
 
