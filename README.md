@@ -36,6 +36,7 @@ fn main() {
     worker.cancel_tasks();
     assert!(worker.get_blocking().is_none());
 }
+
 fn worker_function(task: u64, state: &State) -> Option<u64> {
     for i in 0.. {
         sleep(Duration::from_millis(50)); // Do some work
