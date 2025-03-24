@@ -134,3 +134,16 @@ where
         });
     }
 }
+
+impl<T, R> Drop for Worker<T, R>
+where
+    T: Send + 'static,
+    R: Send + 'static,
+{
+    /// Drop the worker and terminate all worker threads. Cancel all tasks as soon as possible.
+    fn drop(&mut self) {
+        for state in &self.worker_state {
+            state.cancel();
+        }
+    }
+}
