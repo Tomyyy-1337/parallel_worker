@@ -1,10 +1,8 @@
 use std::{
-    cell::Cell,
-    sync::mpsc::{Receiver, Sender},
-    thread::available_parallelism,
+    cell::Cell, result, sync::mpsc::{Receiver, Sender}, thread::available_parallelism
 };
 
-use crate::{cell_utils::CellUpdate, task_queue::TaskQueue, worker_methods::{Work, WorkerMethods}};
+use crate::{cell_utils::CellUpdate, task_queue::TaskQueue, worker_methods::{Work, WorkerInit, WorkerMethods}};
 
 /// A worker that processes tasks in parallel using multiple worker threads. 
 pub struct BasicWorker<T, R> 
@@ -64,76 +62,42 @@ where
     }
 }
 
+impl<T, R, F> WorkerInit<T, R, F> for BasicWorker<T, R> 
+where 
+    T: Send + 'static,
+    R: Send + 'static,
+    F: Fn(T) -> R + Send + Copy + 'static,
+{
+    fn with_num_threads(num_worker_threads: usize, worker_function: F) -> Self {
+        let (result_sender, result_receiver) = std::sync::mpsc::channel();
+        let task_queue = TaskQueue::new();
+
+        for _ in 0..num_worker_threads {
+            let task_queue = task_queue.clone();
+            let result_sender = result_sender.clone();
+            std::thread::spawn(move || {
+                loop {
+                    match task_queue.wait_for_task_and_then(|| ()) {
+                        Work::Terminate => break,
+                        Work::Task(task) => {
+                            if let Err(_) = result_sender.send(worker_function(task)) {
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        BasicWorker::constructor(task_queue, result_receiver, num_worker_threads)
+    }
+}
+
 impl<T, R> BasicWorker<T, R>
 where
     T: Send + 'static,
     R: Send + 'static,
 {
-    /// Create a new worker with a given number of worker threads and a worker function.
-    /// Spawns worker threads that will process tasks from the queue using the worker function.
-    pub fn with_num_threads(
-        num_worker_threads: usize,
-        worker_function: fn(T) -> R,
-    ) -> BasicWorker<T, R> {
-        let (result_sender, result_receiver) = std::sync::mpsc::channel();
-        let task_queue = TaskQueue::new();
-
-        Self::start_worker_threads(
-            num_worker_threads,
-            worker_function,
-            result_sender,
-            &task_queue,
-        );
-
-        BasicWorker::constructor(task_queue, result_receiver, num_worker_threads)
-    }
-
-    /// Create a new worker with a given worker function. The number of worker threads will be set to the number of available
-    /// logical cores minus one. If you want to use a custom thread count, use the `with_num_threads` method to create a worker.
-    /// Spawns worker threads that will process tasks from the queue using the worker function.
-    pub fn new(worker_function: fn(T) -> R) -> BasicWorker<T, R> {
-        let num_worker_threads = available_parallelism()
-            .map(|n| n.get().saturating_sub(1))
-            .unwrap_or(1);
-        Self::with_num_threads(num_worker_threads, worker_function)
-    }
-
-    fn start_worker_threads(
-        num_worker_threads: usize,
-        worker_function: fn(T) -> R,
-        result_sender: Sender<R>,
-        task_queue: &TaskQueue<Work<T>>,
-    ) {
-        for _ in 0..num_worker_threads {
-            Self::spawn_worker_thread(
-                worker_function,
-                result_sender.clone(),
-                task_queue.clone(),
-            );
-        }
-    }
-
-    fn spawn_worker_thread(
-        worker_function: fn(T) -> R,
-        result_sender: Sender<R>,
-        task_queue: TaskQueue<Work<T>>,
-    ) -> std::thread::JoinHandle<()> {
-        std::thread::spawn(move || {
-            loop {
-                match task_queue.wait_for_task_and_then(|| ()) {
-                    Work::Terminate => break,
-                    Work::Task(task) => {
-                        let result = worker_function(task);
-
-                        if let Err(_) = result_sender.send(result) {
-                            break;
-                        }
-                    }
-                }
-            }
-        })
-    }
-
     pub(crate) fn constructor(
         task_queue: TaskQueue<Work<T>>,
         result_receiver: Receiver<R>,

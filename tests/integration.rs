@@ -1,6 +1,6 @@
 use std::thread::sleep;
 
-use parallel_worker::{check_if_cancelled, BasicWorker, State, Worker, WorkerMethods};
+use parallel_worker::prelude::*;
 
 #[test]
 fn basic_worker() {

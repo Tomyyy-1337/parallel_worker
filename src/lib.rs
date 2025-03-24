@@ -75,6 +75,7 @@ pub use crate::worker_state::State;
 
 mod worker_methods;
 pub use crate::worker_methods::WorkerMethods;
+pub use crate::worker_methods::WorkerInit;
 
 mod worker;
 pub use crate::worker::Worker;
@@ -84,6 +85,7 @@ pub use crate::basic_worker::BasicWorker;
 
 pub mod prelude {
     pub use crate::worker_methods::WorkerMethods;
+    pub use crate::worker_methods::WorkerInit;
     pub use crate::worker::Worker;
     pub use crate::basic_worker::BasicWorker;
     pub use crate::worker_state::State;

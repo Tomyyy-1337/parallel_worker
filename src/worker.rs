@@ -3,7 +3,7 @@ use std::{
     thread::available_parallelism,
 };
 
-use crate::{task_queue::TaskQueue, worker_methods::{Work, WorkerMethods}, BasicWorker, State};
+use crate::{task_queue::TaskQueue, worker_methods::{Work, WorkerInit, WorkerMethods}, BasicWorker, State};
 
 /// A worker that processes tasks in parallel using multiple worker threads. 
 /// Allows for optional results and task cancelation.
@@ -56,22 +56,18 @@ where
     }
 }
 
-impl<T, R> Worker<T, R>
+impl <T, R, F> WorkerInit<T, R, F> for Worker<T, R>
 where
     T: Send + 'static,
     R: Send + 'static,
+    F: Fn(T, &State) -> Option<R> + Copy + Send + 'static,
 {
-    /// Create a new worker with a given number of worker threads and a worker function.
-    /// Spawns worker threads that will process tasks from the queue using the worker function.
-    pub fn with_num_threads(
-        num_worker_threads: usize,
-        worker_function: fn(T, &State) -> Option<R>,
-    ) -> Worker<T, R> {
+    fn with_num_threads(num_worker_threads: usize, worker_function: F) -> Self {
         let (result_sender, result_receiver) = std::sync::mpsc::channel();
         let task_queue = TaskQueue::new();
 
         Worker {
-            worker_state: Self::start_worker_threads(
+            worker_state: start_worker_threads(
                 num_worker_threads,
                 worker_function,
                 result_sender,
@@ -80,59 +76,59 @@ where
             inner: BasicWorker::constructor(task_queue, result_receiver, num_worker_threads)
         }
     }
+}
 
-    /// Create a new worker with a given worker function. The number of worker threads will be set to the number of available
-    /// logical cores minus one. If you want to use a custom thread count, use the `with_num_threads` method to create a worker.
-    /// Spawns worker threads that will process tasks from the queue using the worker function.
-    pub fn new(worker_function: fn(T, &State) -> Option<R>) -> Worker<T, R> {
-        let num_worker_threads = available_parallelism()
-            .map(|n| n.get().saturating_sub(1))
-            .unwrap_or(1);
-        Self::with_num_threads(num_worker_threads, worker_function)
+
+fn start_worker_threads<T, R, F>(
+    num_worker_threads: usize,
+    worker_function: F,
+    result_sender: Sender<Option<R>>,
+    task_queue: &TaskQueue<Work<T>>,
+) -> Vec<State> 
+where
+    T: Send + 'static,
+    R: Send + 'static,
+    F: Fn(T, &State) -> Option<R> + Send + Copy + 'static,
+{
+    let mut worker_states = Vec::with_capacity(num_worker_threads);
+    for _ in 0..num_worker_threads {
+        let state = State::new();
+        spawn_worker_thread(
+            worker_function,
+            result_sender.clone(),
+            task_queue.clone(),
+            state.clone(),
+        );
+        worker_states.push(state);
     }
+    worker_states
+}
 
-    fn start_worker_threads(
-        num_worker_threads: usize,
-        worker_function: fn(T, &State) -> Option<R>,
-        result_sender: Sender<Option<R>>,
-        task_queue: &TaskQueue<Work<T>>,
-    ) -> Vec<State> {
-        let mut worker_states = Vec::with_capacity(num_worker_threads);
-        for _ in 0..num_worker_threads {
-            let state = State::new();
-            Self::spawn_worker_thread(
-                worker_function,
-                result_sender.clone(),
-                task_queue.clone(),
-                state.clone(),
-            );
-            worker_states.push(state);
-        }
-        worker_states
-    }
+fn spawn_worker_thread<T, R, F>(
+    worker_function: F,
+    result_sender: Sender<Option<R>>,
+    task_queue: TaskQueue<Work<T>>,
+    state: State,
+) where
+    T: Send + 'static,
+    R: Send + 'static,
+    F: Fn(T, &State) -> Option<R> + Send + 'static,
+{
+    std::thread::spawn(move || {
+        loop {
+            match task_queue.wait_for_task_and_then(|| state.set_running()) {
+                Work::Terminate => break,
+                Work::Task(task) => {
+                    let result = worker_function(task, &state);
+                    let result = if state.is_cancelled() { None } else { result };
 
-    fn spawn_worker_thread(
-        worker_function: fn(T, &State) -> Option<R>,
-        result_sender: Sender<Option<R>>,
-        task_queue: TaskQueue<Work<T>>,
-        state: State,
-    ) {
-        std::thread::spawn(move || {
-            loop {
-                match task_queue.wait_for_task_and_then(|| state.set_running()) {
-                    Work::Terminate => break,
-                    Work::Task(task) => {
-                        let result = worker_function(task, &state);
-                        let result = if state.is_cancelled() { None } else { result };
-
-                        if let Err(_) = result_sender.send(result) {
-                            break;
-                        }
+                    if let Err(_) = result_sender.send(result) {
+                        break;
                     }
                 }
             }
-        });
-    }
+        }
+    });
 }
 
 impl<T, R> Drop for Worker<T, R>
