@@ -1,5 +1,6 @@
 use std::thread::available_parallelism;
 
+/// Methods for creating a worker.
 pub trait WorkerInit<T, R, F> 
 where 
     Self: Sized,
@@ -8,8 +9,8 @@ where
     /// Spawns worker threads that will process tasks from the queue using the worker function.
     fn with_num_threads(num_worker_threads: usize, worker_function: F) -> Self;
 
-    /// Create a new worker with a given worker function. The number of worker threads will be set to the number of available
-    /// logical cores minus one. If you want to use a custom thread count, use the `with_num_threads` method to create a worker.
+    /// Create a new worker with a given worker function. 
+    /// The number of worker threads will be set to the number of available logical cores minus one.
     /// Spawns worker threads that will process tasks from the queue using the worker function.
     fn new(worker_function: F) -> Self {
         let num_worker_threads = available_parallelism()
@@ -19,6 +20,7 @@ where
     }
 }
 
+/// Methods for interacting with a worker.
 pub trait WorkerMethods<T, R> {
     /// Add a task to the end of the queue.
     /// The task will be processed by one of the worker threads.

@@ -4,8 +4,8 @@ use std::sync::{
 };
 
 /// Check if the task has been canceled and return None if it has.
-/// Can be used inside the worker function of a `Worker`. Can not be
-/// used with the `BasicWorker`.
+/// Can be used inside the worker function of a [`crate::Worker`]. Can not be
+/// used with the [`crate::BasicWorker`].
 ///
 /// ## Example usage:
 /// ```rust ignore
@@ -33,9 +33,8 @@ macro_rules! check_if_cancelled {
     };
 }
 
-/// State of the worker. Used to check if the task has been canceled.
-/// Check if the task has been canceled using the `is_cancelled` method.
-/// Or use the `check_if_cancelled!` macro to check and return None from the worker function.
+/// State of a worker thread.
+/// Use the [`check_if_cancelled!`] macro to check if the task has been canceld and return [`None`] if it has.
 pub struct State {
     is_canceled: Arc<AtomicBool>,
 }

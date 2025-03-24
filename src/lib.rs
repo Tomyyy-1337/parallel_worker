@@ -1,9 +1,15 @@
 //! # Parallel Worker
 //!
 //! This crate provides a simple interface for running tasks in parallel.
-//! The `Worker` struct is used to dispatch tasks to worker threads and collect the results.
+//! The [`Worker`] or [`BasicWorker`] struct are used to dispatch tasks to worker threads and collect the results.
 //! You can wait for results or recieve currently available results.
+//! 
+//! ## Workers
+//! There are two types of workers:
+//! - [`BasicWorker`] is a simple worker that processes tasks in parallel using multiple worker threads.
+//! - [`Worker`] has additional functionality for optional results and task cancelation during execution.
 //!
+//! ## Example
 //! ```rust
 //!  use parallel_worker::prelude::*;
 //!
@@ -22,7 +28,7 @@
 //! ```
 //!
 //! ## Tasks can be canceled
-//! Canceled tasks will stop executing as soon as they reach a `check_if_cancelled!`.
+//! Canceled tasks will stop executing as soon as they reach a [`check_if_cancelled!`].
 //! Results of canceled tasks will be discarded even if they have already been computed.   
 //! ```rust
 //! use parallel_worker::prelude::*;
@@ -47,7 +53,7 @@
 //! }
 //!```
 //! ## Results can be optional
-//! If a worker returns `None` the result will be discarded.
+//! If a worker returns [`None`] the result will be discarded.
 //! ```rust
 //! use parallel_worker::prelude::*;
 //!
