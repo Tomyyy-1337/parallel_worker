@@ -1,10 +1,9 @@
 use std::{
-    cell::Cell,
-    sync::mpsc::{Receiver, Sender},
+    sync::mpsc::Sender,
     thread::available_parallelism,
 };
 
-use crate::{cell_utils::CellUpdate, task_queue::TaskQueue, worker_methods::{Work, WorkerMethods}, State};
+use crate::{task_queue::TaskQueue, worker_methods::{Work, WorkerMethods}, BasicWorker, State};
 
 /// A worker that processes tasks in parallel using multiple worker threads. 
 /// Allows for optional results and task cancelation.
@@ -13,10 +12,7 @@ where
     T: Send + 'static,
     R: Send + 'static,
 {
-    task_queue: TaskQueue<Work<T>>,
-    result_receiver: Receiver<Option<R>>,
-    num_worker_threads: usize,
-    num_pending_tasks: Cell<usize>,
+    inner: BasicWorker<T, Option<R>>,
     worker_state: Vec<State>,
 }
 
@@ -26,52 +22,37 @@ where
     R: Send + 'static,
 {
     fn add_task(&self, task: T) {
-        self.num_pending_tasks.modify(|n| n + 1);
-        self.task_queue.push(Work::Task(task));
+        self.inner.add_task(task);
     }
-    
+
     fn add_tasks(&self, tasks: impl IntoIterator<Item = T>) {
-        let num = self.task_queue.extend(tasks.into_iter().map(Work::Task));
-        self.num_pending_tasks.modify(|n| n + num);
+        self.inner.add_tasks(tasks);
     }
 
     /// Clear the task queue and cancel all tasks as soon as possible. 
     /// The results of canceled tasks will be discarded.
     /// Canceling the execution of tasks requires the worker function to use the `check_if_cancelled!` macro.
     fn cancel_tasks(&self) {
-        let tasks_in_queue = self.task_queue.clear_queue();
-        self.num_pending_tasks.modify(|n| n - tasks_in_queue);
+        self.inner.cancel_tasks();
         for state in &self.worker_state {
             state.cancel();
         }
     }
 
     fn get(&self) -> Option<R> {
-        while let Ok(result) = self.result_receiver.try_recv() {
-            self.num_pending_tasks.modify(|n| n - 1);
-            if let Some(result) = result {
-                return Some(result);
-            }
-        }
-        None
+        self.inner.get_iter().flatten().next()
     }
 
     fn get_blocking(&self) -> Option<R> {
-        while self.num_pending_tasks.get() > 0 {
-            self.num_pending_tasks.modify(|n| n - 1);
-            if let Ok(Some(result)) = self.result_receiver.recv() {
-                return Some(result);
-            }
-        }
-        None
+        self.inner.get_iter_blocking().flatten().next()
     }
 
     fn current_queue_size(&self) -> usize {
-        self.task_queue.len()
+        self.inner.current_queue_size()
     }
 
     fn num_pending_tasks(&self) -> usize {
-        self.num_pending_tasks.get()
+        self.inner.num_pending_tasks()
     }
 }
 
@@ -96,10 +77,7 @@ where
                 result_sender,
                 &task_queue,
             ),
-            task_queue,
-            result_receiver,
-            num_worker_threads,
-            num_pending_tasks: Cell::new(0),
+            inner: BasicWorker::constructor(task_queue, result_receiver, num_worker_threads)
         }
     }
 
@@ -154,20 +132,5 @@ where
                 }
             }
         });
-    }
-}
-
-impl<T, R> Drop for Worker<T, R>
-where
-    T: Send + 'static,
-    R: Send + 'static,
-{
-    /// Drop the worker and terminate all worker threads.
-    fn drop(&mut self) {
-        self.cancel_tasks();
-
-        let messages = (0..self.num_worker_threads).map(|_| Work::Terminate);
-
-        self.task_queue.extend(messages);
     }
 }

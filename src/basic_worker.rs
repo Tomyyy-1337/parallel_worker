@@ -7,7 +7,7 @@ use std::{
 use crate::{cell_utils::CellUpdate, task_queue::TaskQueue, worker_methods::{Work, WorkerMethods}};
 
 /// A worker that processes tasks in parallel using multiple worker threads. 
-pub struct BasicWorker<T, R>
+pub struct BasicWorker<T, R> 
 where
     T: Send + 'static,
     R: Send + 'static,
@@ -40,8 +40,8 @@ where
     }
 
     fn get(&self) -> Option<R> {
-        self.num_pending_tasks.modify(|n| n - 1);
         if let Ok(result) = self.result_receiver.try_recv() {
+            self.num_pending_tasks.modify(|n| n - 1);
             return Some(result);
         }
         None
@@ -85,12 +85,7 @@ where
             &task_queue,
         );
 
-        BasicWorker {
-            task_queue,
-            result_receiver,
-            num_worker_threads,
-            num_pending_tasks: Cell::new(0),
-        }
+        BasicWorker::constructor(task_queue, result_receiver, num_worker_threads)
     }
 
     /// Create a new worker with a given worker function. The number of worker threads will be set to the number of available
@@ -137,6 +132,19 @@ where
                 }
             }
         })
+    }
+
+    pub(crate) fn constructor(
+        task_queue: TaskQueue<Work<T>>,
+        result_receiver: Receiver<R>,
+        num_worker_threads: usize,
+    ) -> Self {
+        Self {
+            task_queue,
+            result_receiver,
+            num_worker_threads,
+            num_pending_tasks: Cell::new(0),
+        }
     }
 }
 
