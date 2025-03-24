@@ -3,7 +3,7 @@ use std::sync::mpsc::Sender;
 use crate::{
     BasicWorker, State,
     task_queue::TaskQueue,
-    worker_methods::{Work, WorkerInit, WorkerMethods},
+    worker_traits::{Work, WorkerInit, WorkerMethods},
 };
 
 /// A worker that processes tasks in parallel using multiple worker threads.

@@ -73,9 +73,9 @@ mod task_queue;
 mod worker_state;
 pub use crate::worker_state::State;
 
-mod worker_methods;
-pub use crate::worker_methods::WorkerInit;
-pub use crate::worker_methods::WorkerMethods;
+mod worker_traits;
+pub use crate::worker_traits::WorkerInit;
+pub use crate::worker_traits::WorkerMethods;
 
 mod worker;
 pub use crate::worker::Worker;
@@ -87,7 +87,7 @@ pub mod prelude {
     pub use crate::basic_worker::BasicWorker;
     pub use crate::check_if_cancelled;
     pub use crate::worker::Worker;
-    pub use crate::worker_methods::WorkerInit;
-    pub use crate::worker_methods::WorkerMethods;
+    pub use crate::worker_traits::WorkerInit;
+    pub use crate::worker_traits::WorkerMethods;
     pub use crate::worker_state::State;
 }
