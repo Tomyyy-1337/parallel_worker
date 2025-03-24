@@ -34,7 +34,7 @@ macro_rules! check_if_cancelled {
 }
 
 /// State of a worker thread.
-/// Use the [`check_if_cancelled!`] macro to check if the task has been canceld and return [`None`] if it has.
+/// Use the [`check_if_cancelled!`] macro to check if a task has been canceld.
 pub struct State {
     is_canceled: Arc<AtomicBool>,
 }
