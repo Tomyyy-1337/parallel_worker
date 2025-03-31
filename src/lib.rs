@@ -1,14 +1,15 @@
 //! # Parallel Worker
 //!
 //! This crate provides a simple interface for running tasks in parallel.
-//! The [`Worker`] or [`BasicWorker`] structs are used to dispatch tasks to worker threads and collect the results.
+//! The [`CancelableWorker`], [`OrderedWorker`] or [`BasicWorker`] structs are used to dispatch tasks to worker threads and collect the results.
 //! You can wait for results or recieve currently available results.
 //! 
 //! ## Workers
-//! There are two types of workers:
+//! There are three types of workers:
 //! - [`BasicWorker`] is a simple worker that processes tasks in parallel using multiple worker threads.
-//! - [`Worker`] has additional functionality for optional results and task cancelation during execution.
-//!
+//! - [`CancelableWorker`] has additional functionality for optional results and task cancelation during execution.
+//! - [`OrderedWorker`] returns results in the same order as the tasks were added. 
+//! 
 //! ## Example
 //! ```rust
 //!  use parallel_worker::prelude::*;
@@ -35,7 +36,7 @@
 //!
 //! # use std::{thread::sleep, time::Duration};
 //! fn main() {
-//!     let worker = Worker::new(worker_function);
+//!     let worker = CancelableWorker::new(worker_function);
 //!
 //!     worker.add_task(1);
 //!
@@ -58,7 +59,7 @@
 //! use parallel_worker::prelude::*;
 //!
 //! fn main() {
-//!     let worker = Worker::new(|n: u64, _s: &State| {
+//!     let worker = CancelableWorker::new(|n: u64, _s: &State| {
 //!         if n % 2 == 0 {
 //!             Some(n)
 //!         } else {
@@ -72,28 +73,27 @@
 //! }
 //! ```
 
-mod cell_utils;
+mod internal;
 
-mod task_queue;
+pub mod worker_traits;
 
-mod worker_state;
-pub use crate::worker_state::State;
-
-mod worker_traits;
-pub use crate::worker_traits::WorkerInit;
-pub use crate::worker_traits::WorkerMethods;
-
-mod worker;
-pub use crate::worker::Worker;
-
-mod basic_worker;
-pub use crate::basic_worker::BasicWorker;
+mod workers;
+pub use workers:: {
+    BasicWorker,
+    CancelableWorker,
+    OrderedWorker,
+};
 
 pub mod prelude {
-    pub use crate::basic_worker::BasicWorker;
+    pub use crate::workers::{
+        BasicWorker,
+        CancelableWorker,
+        OrderedWorker,
+    };
     pub use crate::check_if_cancelled;
-    pub use crate::worker::Worker;
-    pub use crate::worker_traits::WorkerInit;
-    pub use crate::worker_traits::WorkerMethods;
-    pub use crate::worker_state::State;
+    pub use crate::worker_traits::{
+        WorkerInit,
+        WorkerMethods,
+    };
+    pub use crate::internal::State;
 }

@@ -1,14 +1,14 @@
 use std::sync::mpsc::Sender;
 
 use crate::{
-    BasicWorker, State,
-    task_queue::TaskQueue,
-    worker_traits::{Work, WorkerInit, WorkerMethods},
+    internal::{TaskQueue, Work}, prelude::State, worker_traits::{WorkerInit, WorkerMethods}
 };
+
+use super::BasicWorker;
 
 /// A worker that processes tasks in parallel using multiple worker threads.
 /// Allows for optional results and task cancelation.
-pub struct Worker<T, R>
+pub struct CancelableWorker<T, R>
 where
     T: Send + 'static,
     R: Send + 'static,
@@ -17,7 +17,7 @@ where
     worker_state: Vec<State>,
 }
 
-impl<T, R> WorkerMethods<T, R> for Worker<T, R>
+impl<T, R> WorkerMethods<T, R> for CancelableWorker<T, R>
 where
     T: Send + 'static,
     R: Send + 'static,
@@ -53,7 +53,7 @@ where
     }
 }
 
-impl<T, R, F> WorkerInit<T, R, F> for Worker<T, R>
+impl<T, R, F> WorkerInit<T, R, F> for CancelableWorker<T, R>
 where
     T: Send + 'static,
     R: Send + 'static,
@@ -75,7 +75,7 @@ where
             worker_state.push(state);
         }
 
-        Worker {
+        CancelableWorker {
             worker_state,
             inner: BasicWorker::constructor(task_queue, result_receiver, num_worker_threads),
         }
@@ -109,7 +109,7 @@ fn spawn_worker_thread<T, R, F>(
     });
 }
 
-impl<T, R> Drop for Worker<T, R>
+impl<T, R> Drop for CancelableWorker<T, R>
 where
     T: Send + 'static,
     R: Send + 'static,

@@ -1,9 +1,7 @@
 use std::{cell::Cell, sync::mpsc::Receiver};
 
 use crate::{
-    cell_utils::CellUpdate,
-    task_queue::TaskQueue,
-    worker_traits::{Work, WorkerInit, WorkerMethods},
+    internal::{CellUpdate, TaskQueue, Work}, worker_traits::{WorkerInit, WorkerMethods}
 };
 
 /// A worker that processes tasks in parallel using multiple worker threads.
