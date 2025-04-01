@@ -53,7 +53,7 @@ fn worker_function(task: u64, state: &State) -> Option<u64> {
 ```
 
 ## Results can be optional
-If a worker returns [`None`] the result will be discarded. This feature is available in the [`CancelableWorker`].
+If a worker returns `None` the result will be discarded. This feature is available in the `CancelableWorker`.
  
 ```rust
 use parallel_worker::prelude::*;
