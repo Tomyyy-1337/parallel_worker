@@ -14,7 +14,7 @@ Basic example of using a worker to run tasks in parallel using the `BasicWorker`
 Tasks start executing as soon as they are added. When all threads are busy, tasks are queued until a thread becomes available.
 ```rust
  use parallel_worker::prelude::*;
- 
+
  fn main() {
     let worker = BasicWorker::new(|n| {
        // Answer to life, the universe and everything
@@ -50,9 +50,11 @@ fn worker_function(task: u64, state: &State) -> Option<u64> {
     }
     unreachable!() 
 }
-``
+```
+
 ## Results can be optional
-If a worker returns [`None`] the result will be discarded. This feature is available in the [`CancelableWorker`]. 
+If a worker returns [`None`] the result will be discarded. This feature is available in the [`CancelableWorker`].
+ 
 ```rust
 use parallel_worker::prelude::*;
 
