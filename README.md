@@ -1,16 +1,16 @@
 # Parallel Worker
 
 This [crate](https://crates.io/crates/parallel_worker) provides a simple interface for running tasks in parallel.
-The [`BasicWorker`], [`CancelableWorker`] or [`OrderedWorker`] structs are used to dispatch tasks to worker threads and collect the results. You can wait for results or recieve currently available results.
+The `BasicWorker`, `CancelableWorker` or `OrderedWorker` structs are used to dispatch tasks to worker threads and collect the results. You can wait for results or recieve currently available results.
 
 ## Workers
 There are three types of workers:
-- [`BasicWorker`] is a simple worker that processes tasks in parallel using multiple worker threads.
-- [`CancelableWorker`] has additional functionality for optional results and task cancelation during execution.
-- [`OrderedWorker`] returns results in the same order as the tasks were added. 
+- `BasicWorker` is a simple worker that processes tasks in parallel using multiple worker threads.
+- `CancelableWorker` has additional functionality for optional results and task cancelation during execution.
+- `OrderedWorker` returns results in the same order as the tasks were added. 
 
 ## Example
-Basic example of using a worker to run tasks in parallel using the [`BasicWorker`] struct.
+Basic example of using a worker to run tasks in parallel using the `BasicWorker` struct.
 Tasks start executing as soon as they are added. When all threads are busy, tasks are queued until a thread becomes available.
 ```rust
  use parallel_worker::prelude::*;
@@ -28,9 +28,9 @@ Tasks start executing as soon as they are added. When all threads are busy, task
 }
 ```
 ## Tasks can be canceled
-If you want to cancel tasks during execution, use [`CancelableWorker`] and call the [`check_if_cancelled!`] 
+If you want to cancel tasks during execution, use `CancelableWorker` and call the `check_if_cancelled!` 
 macro in your worker function on a regular basis. Exessive checking will lead to a performance costs.
-Canceled tasks will stop executing as soon as they reach a [`check_if_cancelled!`], their results will be discarded.
+Canceled tasks will stop executing as soon as they reach a `check_if_cancelled!`, their results will be discarded.
 Results of tasks that have already completed will remain unaffected.  
 ```rust
 use parallel_worker::prelude::*;
@@ -69,7 +69,7 @@ fn main() {
 ```
 
 ## Results can be ordered
-If you want to get results in the same order as the tasks were added, use [`OrderedWorker`].
+If you want to get results in the same order as the tasks were added, use `OrderedWorker`.
 ```rust 
 use parallel_worker::prelude::*;
 # use std::{thread::sleep, time::Duration};
