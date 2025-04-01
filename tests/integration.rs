@@ -344,3 +344,23 @@ fn test_reset() {
     assert_eq!(worker.get_blocking(), Some(203));
     assert!(worker.get_blocking().is_none());
 }
+
+#[test]
+fn test_ordered_worker() {
+    let worker = OrderedWorker::new(|n: u64| {
+        sleep(std::time::Duration::from_millis(n%3));
+        n
+    });
+
+    worker.add_task(1);
+    worker.add_task(2);
+    worker.add_task(3);
+
+    let results = worker.get_vec_blocking();
+    assert_eq!(results, vec![1, 2, 3]);
+
+    worker.add_tasks(0..10000);
+
+    let results = worker.get_vec_blocking();
+    assert_eq!(results, (0..10000).collect::<Vec<_>>());
+}
