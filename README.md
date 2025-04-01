@@ -14,6 +14,7 @@ Basic example of using a worker to run tasks in parallel using the `BasicWorker`
 Tasks start executing as soon as they are added. When all threads are busy, tasks are queued until a thread becomes available.
 ```rust
  use parallel_worker::prelude::*;
+ 
  fn main() {
     let worker = BasicWorker::new(|n| {
        // Answer to life, the universe and everything
@@ -34,13 +35,14 @@ Canceled tasks will stop executing as soon as they reach a `check_if_cancelled!`
 Results of tasks that have already completed will remain unaffected.  
 ```rust
 use parallel_worker::prelude::*;
-# use std::{thread::sleep, time::Duration};
+
 fn main() {
     let worker = CancelableWorker::new(worker_function);
     worker.add_tasks([1, 2, 3, 4]);
     worker.cancel_tasks();
     assert!(worker.get_blocking().is_none());
 }
+
 fn worker_function(task: u64, state: &State) -> Option<u64> {
     loop {
         sleep(Duration::from_millis(50)); 
@@ -72,7 +74,6 @@ fn main() {
 If you want to get results in the same order as the tasks were added, use `OrderedWorker`.
 ```rust 
 use parallel_worker::prelude::*;
-# use std::{thread::sleep, time::Duration};
 
 fn main() {
     let worker = OrderedWorker::new(|n: u64| {
