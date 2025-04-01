@@ -1,33 +1,8 @@
 use std::{cell::{Cell, RefCell}, collections::BinaryHeap};
 
-use crate::{internal::CellUpdate, worker_traits::{WorkerInit, WorkerMethods}};
+use crate::{internal::{CellUpdate, OrderedResult}, worker_traits::{WorkerInit, WorkerMethods}};
 
 use super::BasicWorker;
-
-struct OrderedResult<T> {
-    result: T,
-    indx: usize,
-}
-
-impl<T> PartialOrd for OrderedResult<T> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        other.indx.partial_cmp(&self.indx)
-    }
-}
-
-impl<T> Ord for OrderedResult<T> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        other.indx.partial_cmp(&self.indx).unwrap()
-    }
-}
-
-impl<T> Eq for OrderedResult<T> {} 
-
-impl<T> PartialEq for OrderedResult<T> {
-    fn eq(&self, other: &Self) -> bool {
-        other.indx == self.indx
-    }
-}
 
 /// A worker that processes tasks in parallel using multiple worker threads.
 /// The results are returned in same order as the tasks were added.

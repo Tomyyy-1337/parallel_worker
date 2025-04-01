@@ -74,6 +74,7 @@
 //! ```
 
 mod internal;
+pub use internal:: State;
 
 pub mod worker_traits;
 

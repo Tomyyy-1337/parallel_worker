@@ -1,4 +1,6 @@
-use parallel_worker::prelude::*;
+// use parallel_worker::prelude::*;
+
+use parallel_worker::{worker_traits::{WorkerInit, WorkerMethods}, CancelableWorker, OrderedWorker, State};
 
 fn main() {
     let worker = OrderedWorker::new(|n: u64| {
@@ -24,6 +26,15 @@ fn main() {
     }
     println!("Time: {:?}", start.elapsed());
     println!("Sum: {}", s);
+
+    CancelableWorker::new(|n: u64, state: &State| {
+        if n % 2 == 0 {
+            Some(n)
+        } else {
+            state.is_cancelled();
+            None
+        }
+    });
 }
 
 fn fib(n: u64) -> u64 {
