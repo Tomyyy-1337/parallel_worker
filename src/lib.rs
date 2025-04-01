@@ -1,7 +1,7 @@
 //! # Parallel Worker
 //!
 //! This crate provides a simple interface for running tasks in parallel.
-//! The [`CancelableWorker`], [`OrderedWorker`] or [`BasicWorker`] structs are used to dispatch tasks to worker threads and collect the results.
+//! The [`BasicWorker`], [`CancelableWorker`] or [`OrderedWorker`] structs are used to dispatch tasks to worker threads and collect the results.
 //! You can wait for results or recieve currently available results.
 //! 
 //! ## Workers
@@ -57,7 +57,7 @@
 //!         sleep(Duration::from_millis(50)); 
 //!         check_if_cancelled!(state); 
 //!     }
-//!     unreachable!()
+//!     unreachable!() 
 //! }
 //!```
 //! ## Results can be optional
@@ -118,15 +118,15 @@ pub use workers:: {
 };
 
 pub mod prelude {
-    pub use crate::workers::{
-        BasicWorker,
-        CancelableWorker,
-        OrderedWorker,
-    };
+    pub use crate::internal::State; 
     pub use crate::check_if_cancelled;
     pub use crate::worker_traits::{
         WorkerInit,
         WorkerMethods,
     };
-    pub use crate::internal::State;
+    pub use crate::workers::{
+        BasicWorker,
+        CancelableWorker,
+        OrderedWorker,
+    };
 }

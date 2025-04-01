@@ -16,6 +16,7 @@ fn basic_worker() {
     worker.add_tasks(0..10);
 
     assert_eq!(worker.get_iter_blocking().count(), 10);
+    assert_eq!(worker.get_iter_blocking().count(), 0);
 }
 
 #[test]

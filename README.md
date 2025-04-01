@@ -1,20 +1,24 @@
 # Parallel Worker
 
 This [crate](https://crates.io/crates/parallel_worker) provides a simple interface for running tasks in parallel.
-The `Worker` or `BasicWorker` struct are used to dispatch tasks to worker threads and collect the results.
-You can wait for results or recieve currently available results.
+The [`BasicWorker`], [`CancelableWorker`] or [`OrderedWorker`] structs are used to dispatch tasks to worker threads and collect the results. You can wait for results or recieve currently available results.
 
 ## Workers
-There are two types of workers:
-- `BasicWorker` is a simple worker that processes tasks in parallel using multiple worker threads.
-- `Worker` has additional functionality for optional results and task cancelation during execution.
+There are three types of workers:
+- [`BasicWorker`] is a simple worker that processes tasks in parallel using multiple worker threads.
+- [`CancelableWorker`] has additional functionality for optional results and task cancelation during execution.
+- [`OrderedWorker`] returns results in the same order as the tasks were added. 
 
 ## Example
+Basic example of using a worker to run tasks in parallel using the [`BasicWorker`] struct.
+Tasks start executing as soon as they are added. When all threads are busy, tasks are queued until a thread becomes available.
 ```rust
  use parallel_worker::prelude::*;
-
  fn main() {
-    let worker = BasicWorker::new(|n: u64| 42);
+    let worker = BasicWorker::new(|n| {
+       // Answer to life, the universe and everything
+       return 42;
+    });
     worker.add_task(1);
     worker.add_task(2);
     assert_eq!(worker.get_blocking(), Some(42));
@@ -23,40 +27,35 @@ There are two types of workers:
     assert_eq!(worker.get_iter_blocking().count(), 11);
 }
 ```
-
 ## Tasks can be canceled
-
-Canceled tasks will stop executing as soon as they reach a `check_if_cancelled!`.
-Results of canceled tasks will be discarded even if they have already been computed.   
-
+If you want to cancel tasks during execution, use [`CancelableWorker`] and call the [`check_if_cancelled!`] 
+macro in your worker function on a regular basis. Exessive checking will lead to a performance costs.
+Canceled tasks will stop executing as soon as they reach a [`check_if_cancelled!`], their results will be discarded.
+Results of tasks that have already completed will remain unaffected.  
 ```rust
 use parallel_worker::prelude::*;
-
+# use std::{thread::sleep, time::Duration};
 fn main() {
-    let worker = Worker::new(worker_function);
-    worker.add_task(1);
+    let worker = CancelableWorker::new(worker_function);
+    worker.add_tasks([1, 2, 3, 4]);
     worker.cancel_tasks();
     assert!(worker.get_blocking().is_none());
 }
-
 fn worker_function(task: u64, state: &State) -> Option<u64> {
-    for i in 0.. {
-        sleep(Duration::from_millis(50)); // Do some work
-        check_if_cancelled!(state); // Check if the task has been canceled
+    loop {
+        sleep(Duration::from_millis(50)); 
+        check_if_cancelled!(state); 
     }
-    Some(42)
+    unreachable!() 
 }
-```
-
+``
 ## Results can be optional
-
-If a worker returns `None` the result will be discarded. 
-
+If a worker returns [`None`] the result will be discarded. This feature is available in the [`CancelableWorker`]. 
 ```rust
 use parallel_worker::prelude::*;
 
 fn main() {
-    let worker = Worker::new(|n: u64, _s: &State| {
+    let worker = CancelableWorker::new(|n: u64, _s: &State| {
         if n % 2 == 0 {
             Some(n)
         } else {
@@ -65,7 +64,25 @@ fn main() {
     });
     
     worker.add_tasks(1..=10);
+    assert_eq!(worker.get_iter_blocking().count(), 5);
+}
+```
 
-    assert_eq!(worker.get_iter_blocking().count(), 5); 
+## Results can be ordered
+If you want to get results in the same order as the tasks were added, use [`OrderedWorker`].
+```rust 
+use parallel_worker::prelude::*;
+# use std::{thread::sleep, time::Duration};
+
+fn main() {
+    let worker = OrderedWorker::new(|n: u64| {
+        sleep(std::time::Duration::from_millis(n % 3));
+        n    
+    });
+    worker.add_task(1);
+    worker.add_task(2);
+    worker.add_tasks(3..=10);
+    assert_eq!(worker.get_blocking(), Some(1));
+    assert_eq!(worker.get_vec_blocking(), (2..=10).collect::<Vec<_>>());
 }
 ```
