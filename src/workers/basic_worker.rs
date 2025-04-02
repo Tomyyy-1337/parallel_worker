@@ -101,7 +101,6 @@ fn spawn_worker_thread<T, R, F>(
                 }
             }
         }
-        println!("Worker thread terminated.");
     });
 }
 

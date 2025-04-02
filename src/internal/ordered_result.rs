@@ -1,6 +1,8 @@
+use std::num::NonZeroUsize;
+
 pub struct OrderedResult<T> {
     pub result: T,
-    pub indx: usize,
+    pub indx: NonZeroUsize,
 }
 
 impl<T> PartialOrd for OrderedResult<T> {

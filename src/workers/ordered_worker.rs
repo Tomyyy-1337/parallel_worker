@@ -1,4 +1,4 @@
-use std::collections::BinaryHeap;
+use std::{collections::BinaryHeap, num::NonZeroUsize};
 
 use crate::{internal::OrderedResult, worker_traits::{WorkerInit, WorkerMethods}};
 
@@ -11,10 +11,10 @@ where
     T: Send + 'static,
     R: Send + 'static,
 {
-    inner: BasicWorker<(usize, T), (usize, R)>,
+    inner: BasicWorker<(NonZeroUsize, T), (NonZeroUsize, R)>,
     result_heap: BinaryHeap<OrderedResult<R>>,
-    task_indx: usize,
-    result_indx: usize,
+    task_indx: NonZeroUsize,
+    result_indx: NonZeroUsize,
 }
 
 impl<T, R> WorkerMethods<T, R> for OrderedWorker<T, R>
@@ -24,13 +24,13 @@ where
 {
     fn add_task(&mut self, task: T) {
         self.inner.add_task((self.task_indx, task));
-        self.task_indx += 1;
+        self.task_indx = self.task_indx.saturating_add(1);
     }
 
     fn add_tasks(&mut self, tasks: impl IntoIterator<Item = T>) {
         self.inner.add_tasks(tasks.into_iter().map(|t| {
             let task = (self.task_indx, t);
-            self.task_indx += 1;
+            self.task_indx = self.task_indx.saturating_add(1);
             task
         }));
     }
@@ -38,7 +38,8 @@ where
     /// Clear the task queue. Ongoing tasks will not be canceled.
     /// Results of ongoing and already completed tasks will remain unaffected.
     fn cancel_tasks(&mut self) {
-        self.task_indx -= self.inner.pending_tasks();
+        let new_indx = self.task_indx.get() - self.inner.pending_tasks();
+        self.task_indx = NonZeroUsize::new(new_indx).unwrap();
         self.inner.cancel_tasks();
     }
 
@@ -60,17 +61,17 @@ where
     T: Send + 'static,
     R: Send + 'static,
 {
-    fn get_in_order(&mut self, get_function: impl Fn(&mut BasicWorker<(usize, T), (usize, R)>) -> Option<(usize, R)>) -> Option<R> {
+    fn get_in_order(&mut self, get_function: impl Fn(&mut BasicWorker<(NonZeroUsize, T), (NonZeroUsize, R)>) -> Option<(NonZeroUsize, R)>) -> Option<R> {
         if let Some(&OrderedResult{indx, ..}) = self.result_heap.peek() {
             if indx == self.result_indx {
-                self.result_indx += 1;
+                self.result_indx = self.result_indx.saturating_add(1);
                 let result = self.result_heap.pop().unwrap().result;
                 return Some(result);
             }
         }
         while let Some((indx ,result)) = get_function(&mut self.inner) {
             if indx == self.result_indx {
-                self.result_indx += 1;
+                self.result_indx = self.result_indx.saturating_add(1);
                 return Some(result);
             }
             self.result_heap.push(OrderedResult { result, indx });   
@@ -94,8 +95,8 @@ where
         Self {
             inner,
             result_heap: BinaryHeap::new(),
-            task_indx: 0,
-            result_indx: 0,
+            task_indx: NonZeroUsize::new(1).unwrap(),
+            result_indx: NonZeroUsize::new(1).unwrap(),
         }
     }
 }
