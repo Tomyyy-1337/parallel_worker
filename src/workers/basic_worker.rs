@@ -1,7 +1,7 @@
 use std::sync::mpsc::Receiver;
 
 use crate::{
-    internal::{TaskQueue, Work}, worker_traits::{WorkerInit, WorkerMethods}
+    internal::TaskQueue, worker_traits::{WorkerInit, WorkerMethods}
 };
 
 /// A worker that processes tasks in parallel using multiple worker threads.
@@ -10,7 +10,7 @@ where
     T: Send + 'static,
     R: Send + 'static,
 {
-    task_queue: TaskQueue<Work<T>>,
+    task_queue: TaskQueue<Option<T>>,
     result_receiver: Receiver<R>,
     num_worker_threads: usize,
     num_pending_tasks: usize,
@@ -22,12 +22,12 @@ where
     R: Send + 'static,
 {
     fn add_task(&mut self, task: T) {
-        self.task_queue.push(Work::Task(task));
+        self.task_queue.push(Some(task));
         self.num_pending_tasks += 1;
     }
 
     fn add_tasks(&mut self, tasks: impl IntoIterator<Item = T>) {
-        let num = self.task_queue.extend(tasks.into_iter().map(Work::Task));
+        let num = self.task_queue.extend(tasks.into_iter().map(Some));
         self.num_pending_tasks += num;
     }
 
@@ -84,7 +84,7 @@ where
 fn spawn_worker_thread<T, R, F>(
     worker_function: F,
     result_sender: std::sync::mpsc::Sender<R>,
-    task_queue: TaskQueue<Work<T>>,
+    task_queue: TaskQueue<Option<T>>,
 ) where
     T: Send + 'static,
     R: Send + 'static,
@@ -93,14 +93,15 @@ fn spawn_worker_thread<T, R, F>(
     std::thread::spawn(move || {
         loop {
             match task_queue.wait_for_task_and_then(|| ()) {
-                Work::Terminate => break,
-                Work::Task(task) => {
+                None => break,
+                Some(task) => {
                     if let Err(_) = result_sender.send(worker_function(task)) {
                         break;
                     }
                 }
             }
         }
+        println!("Worker thread terminated.");
     });
 }
 
@@ -110,7 +111,7 @@ where
     R: Send + 'static,
 {
     pub(crate) fn constructor(
-        task_queue: TaskQueue<Work<T>>,
+        task_queue: TaskQueue<Option<T>>,
         result_receiver: Receiver<R>,
         num_worker_threads: usize,
     ) -> Self {
@@ -132,7 +133,7 @@ where
     fn drop(&mut self) {
         self.cancel_tasks();
 
-        let messages = (0..self.num_worker_threads).map(|_| Work::Terminate);
+        let messages = (0..self.num_worker_threads).map(|_| None);
 
         self.task_queue.extend(messages);
     }

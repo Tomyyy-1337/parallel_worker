@@ -1,7 +1,7 @@
 use std::sync::mpsc::Sender;
 
 use crate::{
-    internal::{TaskQueue, Work}, prelude::State, worker_traits::{WorkerInit, WorkerMethods}
+    internal::TaskQueue, prelude::State, worker_traits::{WorkerInit, WorkerMethods}
 };
 
 use super::BasicWorker;
@@ -85,7 +85,7 @@ where
 fn spawn_worker_thread<T, R, F>(
     worker_function: F,
     result_sender: Sender<Option<R>>,
-    task_queue: TaskQueue<Work<T>>,
+    task_queue: TaskQueue<Option<T>>,
     state: State,
 ) where
     T: Send + 'static,
@@ -95,8 +95,8 @@ fn spawn_worker_thread<T, R, F>(
     std::thread::spawn(move || {
         loop {
             match task_queue.wait_for_task_and_then(|| state.set_running()) {
-                Work::Terminate => break,
-                Work::Task(task) => {
+                None => break,
+                Some(task) => {
                     let result = worker_function(task, &state);
                     let result = if state.is_cancelled() { None } else { result };
 
