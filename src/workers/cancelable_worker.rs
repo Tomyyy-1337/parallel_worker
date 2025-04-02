@@ -22,29 +22,29 @@ where
     T: Send + 'static,
     R: Send + 'static,
 {
-    fn add_task(&self, task: T) {
+    fn add_task(&mut self, task: T) {
         self.inner.add_task(task);
     }
 
-    fn add_tasks(&self, tasks: impl IntoIterator<Item = T>) {
+    fn add_tasks(&mut self, tasks: impl IntoIterator<Item = T>) {
         self.inner.add_tasks(tasks);
     }
 
     /// Clear the task queue and cancel all ongoing tasks as soon as possible.
     /// The results of canceled tasks will be discarded. Results of already completed tasks will remain unaffected.
     /// Canceling tasks during their execution requires the worker function to use the [`crate::check_if_cancelled!`] macro.
-    fn cancel_tasks(&self) {
+    fn cancel_tasks(&mut self) {
         self.inner.cancel_tasks();
         for state in &self.worker_state {
             state.cancel();
         }
     }
 
-    fn get(&self) -> Option<R> {
+    fn get(&mut self) -> Option<R> {
         self.inner.get_iter().flatten().next()
     }
 
-    fn get_blocking(&self) -> Option<R> {
+    fn get_blocking(&mut self) -> Option<R> {
         self.inner.get_iter_blocking().flatten().next()
     }
 

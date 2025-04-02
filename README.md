@@ -16,7 +16,7 @@ Tasks start executing as soon as they are added. When all threads are busy, task
  use parallel_worker::prelude::*;
 
  fn main() {
-    let worker = BasicWorker::new(|n| {
+    let mut worker = BasicWorker::new(|n| {
        // Answer to life, the universe and everything
        return 42;
     });
@@ -37,7 +37,7 @@ Results of tasks that have already completed will remain unaffected.
 use parallel_worker::prelude::*;
 
 fn main() {
-    let worker = CancelableWorker::new(worker_function);
+    let mut worker = CancelableWorker::new(worker_function);
     worker.add_tasks([1, 2, 3, 4]);
     worker.cancel_tasks();
     assert!(worker.get_blocking().is_none());
@@ -59,7 +59,7 @@ If a worker returns `None` the result will be discarded. This feature is availab
 use parallel_worker::prelude::*;
 
 fn main() {
-    let worker = CancelableWorker::new(|n: u64, _s: &State| {
+    let mut worker = CancelableWorker::new(|n: u64, _s: &State| {
         if n % 2 == 0 {
             Some(n)
         } else {
@@ -78,7 +78,7 @@ If you want to get results in the same order as the tasks were added, use `Order
 use parallel_worker::prelude::*;
 
 fn main() {
-    let worker = OrderedWorker::new(|n: u64| {
+    let mut worker = OrderedWorker::new(|n: u64| {
         sleep(std::time::Duration::from_millis(n % 3));
         n    
     });

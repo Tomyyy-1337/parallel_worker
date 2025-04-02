@@ -17,7 +17,7 @@
 //!  use parallel_worker::prelude::*;
 //!
 //!  fn main() {
-//!     let worker = BasicWorker::new(|n| {
+//!     let mut worker = BasicWorker::new(|n| {
 //!        // Answer to life, the universe and everything
 //!        return 42;
 //!     });
@@ -43,7 +43,7 @@
 //!
 //! # use std::{thread::sleep, time::Duration};
 //! fn main() {
-//!     let worker = CancelableWorker::new(worker_function);
+//!     let mut worker = CancelableWorker::new(worker_function);
 //!
 //!     worker.add_tasks([1, 2, 3, 4]);
 //!
@@ -66,7 +66,7 @@
 //! use parallel_worker::prelude::*;
 //! 
 //! fn main() {
-//!     let worker = CancelableWorker::new(|n: u64, _s: &State| {
+//!     let mut worker = CancelableWorker::new(|n: u64, _s: &State| {
 //!         if n % 2 == 0 {
 //!             Some(n)
 //!         } else {
@@ -87,7 +87,7 @@
 //! # use std::{thread::sleep, time::Duration};
 //! 
 //! fn main() {
-//!     let worker = OrderedWorker::new(|n: u64| {
+//!     let mut worker = OrderedWorker::new(|n: u64| {
 //!         sleep(std::time::Duration::from_millis(n % 3));
 //!         n    
 //!     });

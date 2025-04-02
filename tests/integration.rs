@@ -4,7 +4,7 @@ use parallel_worker::prelude::*;
 
 #[test]
 fn basic_worker() {
-    let worker = BasicWorker::new(|n: u64| n);
+    let mut worker = BasicWorker::new(|n: u64| n);
 
     worker.add_task(1);
     worker.add_task(2);
@@ -21,7 +21,7 @@ fn basic_worker() {
 
 #[test]
 fn test_worker_base() {
-    let worker = CancelableWorker::new(|n, _s| Some(n));
+    let mut worker = CancelableWorker::new(|n, _s| Some(n));
     assert_eq!(worker.pending_tasks(), 0);
 
     worker.add_task(1);
@@ -35,7 +35,7 @@ fn test_worker_base() {
 
 #[test]
 fn test_get_if_ready() {
-    let worker = CancelableWorker::new(|n, _s| Some(n));
+    let mut worker = CancelableWorker::new(|n, _s| Some(n));
 
     worker.add_task(1);
     worker.add_task(2);
@@ -54,7 +54,7 @@ fn test_get_if_ready() {
 
 #[test]
 fn test_receive_all_results() {
-    let worker = CancelableWorker::new(|n, _s| Some(n));
+    let mut worker = CancelableWorker::new(|n, _s| Some(n));
 
     worker.add_task(1);
     worker.add_task(2);
@@ -73,7 +73,7 @@ fn test_receive_all_results() {
 
 #[test]
 fn test_wait_for_result() {
-    let worker = CancelableWorker::new(|n, _s| Some(n));
+    let mut worker = CancelableWorker::new(|n, _s| Some(n));
 
     worker.add_task(1);
     worker.add_task(2);
@@ -96,7 +96,7 @@ fn test_wait_for_result() {
 
 #[test]
 fn test_wait_for_all_results() {
-    let worker = CancelableWorker::new(|n, _s| if n % 2 == 0 { Some(n) } else { None });
+    let mut worker = CancelableWorker::new(|n, _s| if n % 2 == 0 { Some(n) } else { None });
 
     worker.add_task(1);
     worker.add_task(2);
@@ -120,7 +120,7 @@ fn test_wait_for_all_results() {
 
 #[test]
 fn test_receive_results_in_buffer_blocking() {
-    let worker = CancelableWorker::with_num_threads(4, |n, _s| Some(n));
+    let mut worker = CancelableWorker::with_num_threads(4, |n, _s| Some(n));
 
     worker.add_task(1);
     worker.add_task(2);
@@ -140,7 +140,7 @@ fn test_receive_results_in_buffer_blocking() {
 
 #[test]
 fn test_receive_results_in_buffer() {
-    let worker = CancelableWorker::with_num_threads(4, |n, _s| Some(n));
+    let mut worker = CancelableWorker::with_num_threads(4, |n, _s| Some(n));
 
     worker.add_task(1);
     worker.add_task(2);
@@ -159,7 +159,7 @@ fn test_receive_results_in_buffer() {
 
 #[test]
 fn test_optional_return() {
-    let worker = CancelableWorker::new(|n, _s| if n % 2 == 0 { Some(n) } else { None });
+    let mut worker = CancelableWorker::new(|n, _s| if n % 2 == 0 { Some(n) } else { None });
 
     worker.add_task(1);
     worker.add_task(2);
@@ -183,7 +183,7 @@ fn test_optional_return() {
 
 #[test]
 fn test_many_tasks() {
-    let worker = CancelableWorker::new(|n, _s| Some(n));
+    let mut worker = CancelableWorker::new(|n, _s| Some(n));
 
     for i in 0..1000 {
         worker.add_task(i);
@@ -199,7 +199,7 @@ fn test_many_tasks() {
 
 #[test]
 fn test_get_iter() {
-    let worker = CancelableWorker::new(|n, _s| Some(n));
+    let mut worker = CancelableWorker::new(|n, _s| Some(n));
 
     worker.add_task(1);
     worker.add_task(2);
@@ -212,7 +212,7 @@ fn test_get_iter() {
 
 #[test]
 fn test_cancel() {
-    let worker: CancelableWorker<i32, ()> = CancelableWorker::new(|_, s| {
+    let mut worker: CancelableWorker<i32, ()> = CancelableWorker::new(|_, s| {
         loop {
             check_if_cancelled!(s);
             sleep(std::time::Duration::from_millis(10));
@@ -237,7 +237,7 @@ fn test_cancel() {
 
 #[test]
 fn test_long_running_worker() {
-    let worker = CancelableWorker::new(|n, _s| {
+    let mut worker = CancelableWorker::new(|n, _s| {
         sleep(std::time::Duration::from_millis(n));
         Some(n)
     });
@@ -261,7 +261,7 @@ fn test_long_running_worker() {
 fn test_cancel_high_load() {
     use std::{thread::sleep, time::Duration};
 
-    let worker = CancelableWorker::new(|n: u64, _s: &State| {
+    let mut worker = CancelableWorker::new(|n: u64, _s: &State| {
         sleep(Duration::from_millis(n));
         Some(n)
     });
@@ -286,7 +286,7 @@ fn test_cancel_high_load() {
 fn test_cancel_count() {
     use std::{thread::sleep, time::Duration};
 
-    let worker = CancelableWorker::new(|n: u64, _s: &State| {
+    let mut worker = CancelableWorker::new(|n: u64, _s: &State| {
         sleep(Duration::from_millis(20));
         Some(n)
     });
@@ -323,7 +323,7 @@ fn test_cancel_count() {
 
 #[test]
 fn test_reset() {
-    let worker = BasicWorker::new(|n: u64| {
+    let mut worker = BasicWorker::new(|n: u64| {
         sleep(std::time::Duration::from_millis(n));
         n
     });
@@ -348,7 +348,7 @@ fn test_reset() {
 
 #[test]
 fn test_ordered_worker() {
-    let worker = OrderedWorker::new(|n: u64| {
+    let mut worker = OrderedWorker::new(|n: u64| {
         sleep(std::time::Duration::from_millis(n%3));
         n
     });
@@ -368,7 +368,7 @@ fn test_ordered_worker() {
 
 #[test]
 fn test_ordered_worker_cancel() {
-    let worker = OrderedWorker::with_num_threads(2, |n: u64| {
+    let mut worker = OrderedWorker::with_num_threads(2, |n: u64| {
         sleep(std::time::Duration::from_millis(n));
         n
     });

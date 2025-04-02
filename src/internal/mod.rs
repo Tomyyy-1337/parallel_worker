@@ -1,6 +1,3 @@
-mod cell_utils;
-pub(crate) use cell_utils::CellUpdate;
-
 mod task_queue;
 pub(crate) use task_queue::TaskQueue;
 
