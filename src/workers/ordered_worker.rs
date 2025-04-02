@@ -1,8 +1,9 @@
-use std::{collections::BinaryHeap, num::NonZeroUsize};
-
-use crate::{internal::OrderedResult, worker_traits::{WorkerInit, WorkerMethods}};
-
 use super::BasicWorker;
+use crate::{
+    internal::HeapBuffer,
+    worker_traits::{WorkerInit, WorkerMethods},
+};
+use std::num::NonZeroUsize;
 
 /// A worker that processes tasks in parallel using multiple worker threads.
 /// The results are returned in same order as the tasks were added.
@@ -12,9 +13,8 @@ where
     R: Send + 'static,
 {
     inner: BasicWorker<(NonZeroUsize, T), (NonZeroUsize, R)>,
-    result_heap: BinaryHeap<OrderedResult<R>>,
+    result_heap: HeapBuffer<R>,
     task_indx: NonZeroUsize,
-    result_indx: NonZeroUsize,
 }
 
 impl<T, R> WorkerMethods<T, R> for OrderedWorker<T, R>
@@ -44,7 +44,7 @@ where
     }
 
     fn get(&mut self) -> Option<R> {
-       self.get_in_order(|inner| inner.get())
+        self.get_in_order(|inner| inner.get())
     }
 
     fn get_blocking(&mut self) -> Option<R> {
@@ -56,31 +56,32 @@ where
     }
 }
 
-impl<T, R> OrderedWorker<T, R> 
+impl<T, R> OrderedWorker<T, R>
 where
     T: Send + 'static,
     R: Send + 'static,
 {
-    fn get_in_order(&mut self, get_function: impl Fn(&mut BasicWorker<(NonZeroUsize, T), (NonZeroUsize, R)>) -> Option<(NonZeroUsize, R)>) -> Option<R> {
-        if let Some(&OrderedResult{indx, ..}) = self.result_heap.peek() {
-            if indx == self.result_indx {
-                self.result_indx = self.result_indx.saturating_add(1);
-                let result = self.result_heap.pop().unwrap().result;
-                return Some(result);
-            }
+    fn get_in_order(
+        &mut self,
+        get_function: impl Fn(
+            &mut BasicWorker<(NonZeroUsize, T), (NonZeroUsize, R)>,
+        ) -> Option<(NonZeroUsize, R)>,
+    ) -> Option<R> {
+        if let Some(result) = self.result_heap.get() {
+            return Some(result);
         }
-        while let Some((indx ,result)) = get_function(&mut self.inner) {
-            if indx == self.result_indx {
-                self.result_indx = self.result_indx.saturating_add(1);
+        while let Some((indx, result)) = get_function(&mut self.inner) {
+            if indx == self.result_heap.current_indx() {
+                self.result_heap.skip();
                 return Some(result);
             }
-            self.result_heap.push(OrderedResult { result, indx });   
+            self.result_heap.push(result, indx);
         }
         None
     }
 }
 
-impl <T, R, F> WorkerInit<T, R, F> for OrderedWorker<T, R>
+impl<T, R, F> WorkerInit<T, R, F> for OrderedWorker<T, R>
 where
     T: Send + 'static,
     R: Send + 'static,
@@ -94,10 +95,8 @@ where
 
         Self {
             inner,
-            result_heap: BinaryHeap::new(),
-            task_indx: NonZeroUsize::new(1).unwrap(),
-            result_indx: NonZeroUsize::new(1).unwrap(),
+            result_heap: HeapBuffer::new(),
+            task_indx: NonZeroUsize::MIN,
         }
     }
 }
-

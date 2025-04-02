@@ -6,3 +6,6 @@ pub use worker_state::State;
 
 mod ordered_result;
 pub(crate) use ordered_result::OrderedResult;
+
+mod heap_buffer;
+pub(crate) use heap_buffer::HeapBuffer;

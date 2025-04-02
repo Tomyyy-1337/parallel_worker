@@ -1,7 +1,8 @@
 use std::sync::mpsc::Receiver;
 
 use crate::{
-    internal::TaskQueue, worker_traits::{WorkerInit, WorkerMethods}
+    internal::TaskQueue,
+    worker_traits::{WorkerInit, WorkerMethods},
 };
 
 /// A worker that processes tasks in parallel using multiple worker threads.
@@ -70,11 +71,7 @@ where
         let task_queue = TaskQueue::new();
 
         for _ in 0..num_worker_threads {
-            spawn_worker_thread(
-                worker_function,
-                result_sender.clone(),
-                task_queue.clone(),
-            );
+            spawn_worker_thread(worker_function, result_sender.clone(), task_queue.clone());
         }
 
         BasicWorker::constructor(task_queue, result_receiver, num_worker_threads)

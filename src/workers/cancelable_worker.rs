@@ -1,10 +1,10 @@
-use std::sync::mpsc::Sender;
-
-use crate::{
-    internal::TaskQueue, prelude::State, worker_traits::{WorkerInit, WorkerMethods}
-};
-
 use super::BasicWorker;
+use crate::{
+    internal::TaskQueue,
+    prelude::State,
+    worker_traits::{WorkerInit, WorkerMethods},
+};
+use std::sync::mpsc::Sender;
 
 /// A worker that processes tasks in parallel using multiple worker threads.
 /// Allows for optional results and task cancelation.

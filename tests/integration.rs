@@ -327,7 +327,7 @@ fn test_reset() {
         sleep(std::time::Duration::from_millis(n));
         n
     });
-    
+
     worker.add_task(1);
     worker.add_task(2);
     worker.add_task(3);
@@ -335,7 +335,6 @@ fn test_reset() {
     worker.add_task(201);
     worker.add_task(202);
 
-    
     sleep(std::time::Duration::from_millis(50));
 
     worker.reset();
@@ -349,7 +348,7 @@ fn test_reset() {
 #[test]
 fn test_ordered_worker() {
     let mut worker = OrderedWorker::new(|n: u64| {
-        sleep(std::time::Duration::from_millis(n%3));
+        sleep(std::time::Duration::from_millis(n % 3));
         n
     });
 

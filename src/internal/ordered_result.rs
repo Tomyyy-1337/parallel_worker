@@ -17,7 +17,7 @@ impl<T> Ord for OrderedResult<T> {
     }
 }
 
-impl<T> Eq for OrderedResult<T> {} 
+impl<T> Eq for OrderedResult<T> {}
 
 impl<T> PartialEq for OrderedResult<T> {
     fn eq(&self, other: &Self) -> bool {

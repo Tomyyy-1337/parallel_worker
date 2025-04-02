@@ -57,11 +57,11 @@ pub trait WorkerMethods<T, R> {
         write_buffered(buffer, self.get_iter_blocking())
     }
 
-    /// Return the number of pending tasks. 
+    /// Return the number of pending tasks.
     /// This only includes tasks that have been added to the queue but have not started processing.
     fn pending_tasks(&self) -> usize;
 
-    /// Clear the task queue, cancel all tasks and discard all results. 
+    /// Clear the task queue, cancel all tasks and discard all results.
     /// This function will block until all tasks have been canceled.
     fn reset(&mut self) {
         self.cancel_tasks();
