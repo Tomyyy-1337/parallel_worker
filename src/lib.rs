@@ -82,7 +82,7 @@
 //! ```
 //!
 //! ## Results can be ordered
-//! If you want to get results in the same order as the tasks were added, use [`OrderedWorker`].
+//! If you want to get results in the same order as the tasks were added, use [`OrderedWorker`] or [`OrderedCancelableWorker`].
 //! ```rust
 //! use parallel_worker::prelude::*;
 //! # use std::{thread::sleep, time::Duration};
