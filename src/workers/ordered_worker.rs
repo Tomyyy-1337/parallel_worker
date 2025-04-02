@@ -38,6 +38,7 @@ where
     /// Clear the task queue. Ongoing tasks will not be canceled.
     /// Results of ongoing and already completed tasks will remain unaffected.
     fn cancel_tasks(&self) {
+        self.task_indx.modify(|i| i - self.inner.pending_tasks());
         self.inner.cancel_tasks();
     }
 
