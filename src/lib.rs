@@ -35,9 +35,10 @@
 //! ```
 //!
 //! ## Tasks can be canceled
-//! If you want to cancel tasks during execution, use [`CancelableWorker`] and call the [`check_if_cancelled!`]
+//! If you want to cancel tasks during execution, use [`CancelableWorker`] or [`OrderedCancelableWorker`] and call the [`check_if_cancelled!`]
 //! macro in your worker function on a regular basis. Exessive checking will lead to a performance costs.
-//! Canceled tasks will stop executing as soon as they reach a [`check_if_cancelled!`], their results will be discarded.
+//! Canceled tasks will stop executing as soon as they reach a [`check_if_cancelled!`].
+//! Results of canceled tasks will be discarded.
 //! Results of tasks that have already completed will remain unaffected.  
 //! ```rust
 //! use parallel_worker::prelude::*;
@@ -62,7 +63,7 @@
 //! }
 //!```
 //! ## Results can be optional
-//! If a worker returns [`None`] the result will be discarded. This feature is available in the [`CancelableWorker`].
+//! If a worker returns [`None`] the result will be discarded. This feature is available in the [`CancelableWorker`] and [`OrderedCancelableWorker`].
 //! ```rust
 //! use parallel_worker::prelude::*;
 //!

@@ -9,6 +9,10 @@ use std::num::NonZeroUsize;
 /// A worker that processes tasks in parallel using multiple worker threads.
 /// The results are returned in same order as the tasks were added.
 /// Allows for optional results and task cancelation.
+/// 
+/// You can use the [`crate::check_if_cancelled!`] macro inside the worker function to check if the task has been canceled.
+/// The worker will cancel all tasks as soon as possible when [`Self::cancel_tasks`] is called.
+/// The results of canceled tasks will be discarded. Results of already completed tasks will remain unaffected.
 pub struct OrderedCancelableWorker<T, R>
 where
     T: Send + 'static,
