@@ -15,8 +15,13 @@ impl<T> HeapBuffer<T> {
         }
     }
 
-    pub fn push(&mut self, elem: T, indx: NonZeroUsize) {
+    pub fn store_or_return(&mut self, elem: T, indx: NonZeroUsize) -> Option<T> {
+        if indx == self.current_indx {
+            self.current_indx = self.current_indx.saturating_add(1);
+            return Some(elem);
+        }
         self.result_heap.push(OrderedResult { result: elem, indx });
+        None
     }
 
     pub fn get(&mut self) -> Option<T> {
@@ -31,9 +36,5 @@ impl<T> HeapBuffer<T> {
 
     pub fn current_indx(&self) -> NonZeroUsize {
         self.current_indx
-    }
-
-    pub fn skip(&mut self) {
-        self.current_indx = self.current_indx.saturating_add(1);
     }
 }

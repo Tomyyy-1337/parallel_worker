@@ -71,12 +71,11 @@ where
             return Some(result);
         }
         while let Some((indx, result)) = get_function(&mut self.inner) {
-            if indx == self.result_heap.current_indx() {
-                self.result_heap.skip();
+            if let Some(result) = self.result_heap.store_or_return(result, indx) {
                 return Some(result);
             }
-            self.result_heap.push(result, indx);
         }
+
         None
     }
 }
