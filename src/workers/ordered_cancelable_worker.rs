@@ -45,8 +45,8 @@ where
     /// The results of canceled tasks will be discarded. Results of already completed tasks will remain unaffected.
     /// Canceling tasks during their execution requires the worker function to use the [`crate::check_if_cancelled!`] macro.
     fn cancel_tasks(&mut self) {
-        self.task_indx = self.result_heap.current_indx();
         self.inner.cancel_tasks();
+        self.task_indx = self.result_heap.current_indx();
     }
 
     fn get(&mut self) -> Option<R> {
