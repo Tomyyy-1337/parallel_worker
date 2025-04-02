@@ -6,3 +6,6 @@ pub use cancelable_worker::CancelableWorker;
 
 mod ordered_worker;
 pub use ordered_worker::OrderedWorker;
+
+mod ordered_cancelable_worker;
+pub use ordered_cancelable_worker::OrderedCancelableWorker;

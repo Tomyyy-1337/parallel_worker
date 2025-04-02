@@ -115,6 +115,7 @@ pub use workers:: {
     BasicWorker,
     CancelableWorker,
     OrderedWorker,
+    OrderedCancelableWorker,
 };
 
 pub mod prelude {
@@ -128,5 +129,6 @@ pub mod prelude {
         BasicWorker,
         CancelableWorker,
         OrderedWorker,
+        OrderedCancelableWorker,
     };
 }

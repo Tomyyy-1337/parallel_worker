@@ -410,3 +410,44 @@ fn test_ordered_worker_cancel() {
 
     assert_eq!(results, (107..110).collect::<Vec<_>>());
 }
+
+#[test]
+fn test_ordered_worker_cancel_2() {
+    let mut worker = OrderedCancelableWorker::with_num_threads(2, |n: u64, _s| {
+        sleep(std::time::Duration::from_millis(n));
+        Some(n)
+    });
+
+    worker.add_task(100);
+    worker.add_task(101);
+    worker.add_task(102);
+
+    sleep(std::time::Duration::from_millis(50));
+    worker.cancel_tasks();
+
+    assert_eq!(worker.get_blocking(), None);
+
+    worker.add_task(103);
+    worker.add_task(104);
+    worker.add_task(105);
+
+    let results = worker.get_vec_blocking();
+    assert_eq!(results, vec![103, 104, 105]);
+    assert_eq!(worker.get_blocking(), None);
+
+    worker.add_task(106);
+    assert_eq!(worker.get_blocking(), Some(106));
+
+    worker.add_tasks(100..1000);
+
+    sleep(std::time::Duration::from_millis(50));
+
+    worker.cancel_tasks();
+
+    assert_eq!(worker.get_blocking(), None);
+
+    worker.add_tasks(107..110);
+    let results = worker.get_vec_blocking();
+
+    assert_eq!(results, (107..110).collect::<Vec<_>>());
+}
