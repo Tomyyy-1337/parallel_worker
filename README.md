@@ -8,8 +8,6 @@ There are four types of workers:
 - `BasicWorker` is a simple worker that processes tasks in parallel using multiple worker threads.
 - `CancelableWorker` has additional functionality for optional results and task cancelation during execution.
 - `OrderedWorker` returns results in the same order as the tasks were added. 
-- `OrderedCancelableWorker` combines the features of `OrderedWorker` and `CancelableWorker`.
-
 ## Example
 Basic example of using a worker to run tasks in parallel using the `BasicWorker` struct.
 Tasks start executing as soon as they are added. When all threads are busy, tasks are queued until a thread becomes available.
@@ -30,7 +28,7 @@ Tasks start executing as soon as they are added. When all threads are busy, task
 }
 ```
 ## Tasks can be canceled
-If you want to cancel tasks during execution, use `CancelableWorker` or `OrderedCancelableWorker` and call the `check_if_cancelled!` macro in your worker function on a regular basis. 
+If you want to cancel tasks during execution, use `CancelableWorker` and call the `check_if_cancelled!` macro in your worker function on a regular basis. 
 Exessive checking will lead to a performance costs. Canceled tasks will stop executing as soon as they reach a `check_if_cancelled!`.
 Results of canceled tasks will be discarded.
 Results of tasks that have already completed will remain unaffected.  
@@ -54,7 +52,7 @@ fn worker_function(task: u64, state: &State) -> Option<u64> {
 ```
 
 ## Results can be optional
-If a worker returns `None` the result will be discarded. This feature is available in the `CancelableWorker` and `OrderedCancelableWorker`.
+If a worker returns `None` the result will be discarded. This feature is available in the `CancelableWorker`.
  
 ```rust
 use parallel_worker::prelude::*;
@@ -74,7 +72,7 @@ fn main() {
 ```
 
 ## Results can be ordered
-If you want to get results in the same order as the tasks were added, use `OrderedWorker` or `OrderedCancelableWorker`.
+If you want to get results in the same order as the tasks were added, use `OrderedWorker`.
 
 ```rust 
 use parallel_worker::prelude::*;

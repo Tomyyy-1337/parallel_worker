@@ -9,7 +9,6 @@
 //! - [`BasicWorker`] is a simple worker that processes tasks in parallel using multiple worker threads.
 //! - [`CancelableWorker`] has additional functionality for optional results and task cancelation during execution.
 //! - [`OrderedWorker`] returns results in the same order as the tasks were added.
-//! - [`OrderedCancelableWorker`] combines the features of [`CancelableWorker`] and [`OrderedWorker`].
 //!
 //! ## Example
 //! Basic example of using a worker to run tasks in parallel using the [`BasicWorker`] struct.
@@ -35,7 +34,7 @@
 //! ```
 //!
 //! ## Tasks can be canceled
-//! If you want to cancel tasks during execution, use [`CancelableWorker`] or [`OrderedCancelableWorker`] and call the [`check_if_cancelled!`]
+//! If you want to cancel tasks during execution, use [`CancelableWorker`] and call the [`check_if_cancelled!`]
 //! macro in your worker function on a regular basis. Exessive checking will lead to a performance costs.
 //! Canceled tasks will stop executing as soon as they reach a [`check_if_cancelled!`].
 //! Results of canceled tasks will be discarded.
@@ -63,7 +62,7 @@
 //! }
 //!```
 //! ## Results can be optional
-//! If a worker returns [`None`] the result will be discarded. This feature is available in the [`CancelableWorker`] and [`OrderedCancelableWorker`].
+//! If a worker returns [`None`] the result will be discarded. This feature is available in the [`CancelableWorker`].
 //! ```rust
 //! use parallel_worker::prelude::*;
 //!
@@ -83,7 +82,7 @@
 //! ```
 //!
 //! ## Results can be ordered
-//! If you want to get results in the same order as the tasks were added, use [`OrderedWorker`] or [`OrderedCancelableWorker`].
+//! If you want to get results in the same order as the tasks were added, use [`OrderedWorker`].
 //! ```rust
 //! use parallel_worker::prelude::*;
 //! # use std::{thread::sleep, time::Duration};
@@ -110,13 +109,13 @@ mod worker_traits;
 pub use worker_traits::{WorkerInit, WorkerMethods};
 
 mod workers;
-pub use workers::{BasicWorker, CancelableWorker, OrderedCancelableWorker, OrderedWorker};
+    pub use workers::{BasicWorker, CancelableWorker, OrderedWorker};
 
 pub mod prelude {
     pub use crate::check_if_cancelled;
     pub use crate::internal::State;
     pub use crate::worker_traits::{WorkerInit, WorkerMethods};
     pub use crate::workers::{
-        BasicWorker, CancelableWorker, OrderedCancelableWorker, OrderedWorker,
+        BasicWorker, CancelableWorker, OrderedWorker,
     };
 }

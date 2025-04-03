@@ -33,8 +33,4 @@ impl<T> HeapBuffer<T> {
         }
         None
     }
-
-    pub fn current_indx(&self) -> NonZeroUsize {
-        self.current_indx
-    }
 }
