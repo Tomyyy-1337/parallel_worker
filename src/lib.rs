@@ -5,7 +5,7 @@
 //! You can wait for results or recieve currently available results.
 //!
 //! ## Workers
-//! There are four types of workers:
+//! There are three types of workers:
 //! - [`BasicWorker`] is a simple worker that processes tasks in parallel using multiple worker threads.
 //! - [`CancelableWorker`] has additional functionality for optional results and task cancelation during execution.
 //! - [`OrderedWorker`] returns results in the same order as the tasks were added.
