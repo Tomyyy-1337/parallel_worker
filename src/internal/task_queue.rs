@@ -38,7 +38,7 @@ impl<T> InnerTaskQueue<T> {
             _ => self.condvar.notify_all(),
         }
         num_new
-    }
+    } 
 
     fn wait_for_task_and_then(&self, f: impl Fn()) -> T {
         let mut tasks = self.tasks.lock().unwrap();
@@ -79,6 +79,10 @@ impl<T> TaskQueue<T> {
 
     pub fn extend(&self, new_tasks: impl IntoIterator<Item = T>) -> usize {
         self.inner.extend(new_tasks)
+    }
+
+    pub fn wait_for_task(&self) -> T {
+        self.inner.wait_for_task_and_then(|| ())
     }
 
     pub fn wait_for_task_and_then(&self, f: impl Fn()) -> T {

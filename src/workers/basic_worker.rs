@@ -89,7 +89,7 @@ fn spawn_worker_thread<T, R, F>(
 {
     std::thread::spawn(move || {
         loop {
-            match task_queue.wait_for_task_and_then(|| ()) {
+            match task_queue.wait_for_task() {
                 None => break,
                 Some(task) => {
                     if let Err(_) = result_sender.send(worker_function(task)) {
