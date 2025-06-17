@@ -2,12 +2,12 @@
 //!
 //! This crate provides a simple interface for running tasks in parallel.
 //! The Worker structs are used to dispatch tasks to worker threads and collect the results.
-//! You can wait for results or recieve currently available results.
+//! You can wait for results or receive currently available results.
 //!
 //! ## Workers
 //! There are three types of workers:
 //! - [`BasicWorker`] is a simple worker that processes tasks in parallel using multiple worker threads.
-//! - [`CancelableWorker`] has additional functionality for optional results and task cancelation during execution.
+//! - [`CancelableWorker`] has additional functionality for optional results and task cancellation during execution.
 //! - [`OrderedWorker`] returns results in the same order as the tasks were added.
 //!
 //! ## Example
@@ -35,7 +35,7 @@
 //!
 //! ## Tasks can be canceled
 //! If you want to cancel tasks during execution, use [`CancelableWorker`] and call the [`check_if_cancelled!`]
-//! macro in your worker function on a regular basis. Exessive checking will lead to a performance costs.
+//! macro in your worker function on a regular basis. Excessive checking will lead to a performance costs.
 //! Canceled tasks will stop executing as soon as they reach a [`check_if_cancelled!`].
 //! Results of canceled tasks will be discarded.
 //! Results of tasks that have already completed will remain unaffected.  
