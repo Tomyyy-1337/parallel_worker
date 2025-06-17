@@ -11,4 +11,3 @@ categories = ["concurrency"]
 readme = "README.md"
 
 [dependencies]
-rayon = "1.10.0"
