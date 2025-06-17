@@ -97,8 +97,7 @@
 //!     worker.add_task(2);
 //!     worker.add_tasks(3..=10);
 //!
-//!     assert_eq!(worker.get_blocking(), Some(1));
-//!     assert_eq!(worker.get_vec_blocking(), (2..=10).collect::<Vec<_>>());
+//!     assert_eq!(worker.get_vec_blocking(), (1..=10).collect::<Vec<_>>());
 //! }
 //! ```
 
