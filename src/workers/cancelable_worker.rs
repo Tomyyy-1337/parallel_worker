@@ -61,7 +61,7 @@ impl<T, R, F> WorkerInit<T, R, F> for CancelableWorker<T, R>
 where
     T: Send + 'static,
     R: Send + 'static,
-    F: Fn(T, &State) -> Option<R> + Copy + Send + 'static,
+    F: Fn(T, &State) -> Option<R> + Clone + Send + 'static,
 {
     fn with_num_threads(num_worker_threads: usize, worker_function: F) -> Self {
         let (result_sender, result_receiver) = std::sync::mpsc::channel();
@@ -71,7 +71,7 @@ where
         for _ in 0..num_worker_threads {
             let state = State::new();
             spawn_worker_thread(
-                worker_function,
+                worker_function.clone(),
                 result_sender.clone(),
                 task_queue.clone(),
                 state.clone(),
